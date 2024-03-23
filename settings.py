@@ -1,4 +1,3 @@
-import os
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from dotenv import dotenv_values
