@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 from pathlib import Path
 from typing import Any, List
@@ -72,6 +73,7 @@ def run_tasks_in_executor(loop: asyncio.AbstractEventLoop, executor: ThreadPoolE
 
 
 def save_data(data: dict[str, pd.DataFrame], output_dir: str) -> None:
+    os.makedirs(output_dir, exist_ok=True)
     for name, data_frame in data.items():
         data_frame.to_csv(Path(output_dir) / f"{name}.csv", index=False)
 
