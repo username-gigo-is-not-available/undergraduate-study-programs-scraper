@@ -1,18 +1,15 @@
 import os
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
-load_dotenv()
 
 BASE_URL: str = "https://finki.ukim.mk"
 STUDY_PROGRAMS_URL: str = "https://finki.ukim.mk/mk/dodiplomski-studii"
 
 INVALID_COURSE_CODES: list[str] = ['F23L1S026', 'F23L2S066']
 
-ENVIRONMENT_VARIABLES = {
-    env_var: os.getenv(env_var) for env_var in list(os.environ.keys())
-}
+ENVIRONMENT_VARIABLES = dotenv_values(".env")
 
 for variable_name, variable_value in ENVIRONMENT_VARIABLES.items():
     if not variable_value:
