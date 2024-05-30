@@ -1,9 +1,11 @@
 import asyncio
 import os
+import ssl
 import time
 from pathlib import Path
 from typing import Any, List
 
+import certifi
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from bs4 import BeautifulSoup
@@ -23,8 +25,9 @@ logging.basicConfig(level=logging.INFO)
 
 
 async def fetch_page(url: str) -> str:
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
+        async with session.get(url, ssl=ssl_context) as response:
             return await response.text()
 
 
