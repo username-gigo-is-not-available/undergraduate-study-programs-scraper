@@ -23,7 +23,7 @@ def format_course_details(course_details: CourseDetails) -> dict[str, str | int]
         'Course Code': course_details.code,
         'Course Name': course_details.name,
         'Course Season': course_details.season,
-        'Course Semester': course_details.semester,
+        'Course Academic Year': course_details.academic_year,
         'Course Professors': course_details.professors,
         'Course Prerequisite': course_details.prerequisite
     }

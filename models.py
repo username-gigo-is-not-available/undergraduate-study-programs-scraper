@@ -13,7 +13,7 @@ CourseDetails = NamedTuple('CourseDetails', [
     ('code', str),
     ('name', str),
     ('season', str),
-    ('semester', int),
+    ('academic_year', int),
     ('professors', str),
     ('prerequisite', str)
 ])
