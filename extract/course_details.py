@@ -20,16 +20,6 @@ def get_course_table(soup: BeautifulSoup) -> Tag:
 
 
 @clean_whitespace
-def parse_course_professors(course_table: Tag) -> str:
-    return course_table.select_one(COURSE_DETAILS_PROFESSORS_SELECTOR).text
-
-
-@clean_whitespace
-def parse_course_prerequisite(course_table: Tag) -> str:
-    return course_table.select_one(COURSE_DETAILS_PREREQUISITE_SELECTOR).text
-
-
-@clean_whitespace
 def parse_course_code(course_table: Tag) -> str:
     return course_table.select_one(COURSE_DETAILS_CODE_SELECTOR).text
 
@@ -47,6 +37,17 @@ def parse_academic_year(course_table: Tag) -> int:
 def parse_course_season(course_table: Tag) -> str:
     return CourseSeason(course_table.select_one(COURSE_DETAILS_SEMESTER_SEASON_SELECTOR).text.capitalize()).value
 
+
+@clean_whitespace
+def parse_course_professors(course_table: Tag) -> str:
+    professors = course_table.select_one(COURSE_DETAILS_PROFESSORS_SELECTOR).text
+    return professors if professors else 'нема'
+
+
+@clean_whitespace
+def parse_course_prerequisite(course_table: Tag) -> str:
+    prerequisite = course_table.select_one(COURSE_DETAILS_PREREQUISITE_SELECTOR).text
+    return prerequisite if prerequisite else 'нема'
 
 parse_fields = {
     'code': parse_course_code,
