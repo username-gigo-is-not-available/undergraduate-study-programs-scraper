@@ -9,14 +9,10 @@ CourseHeader = NamedTuple('CourseHeader', [
     ('type', str),
 ])
 
-
-
 CourseDetails = NamedTuple('CourseDetails', [
     ('code', str),
     ('name', str),
     ('season', str),
-    ('year', int),
-    ('level', int),
     ('semester', int),
     ('professors', str),
     ('prerequisite', str)
