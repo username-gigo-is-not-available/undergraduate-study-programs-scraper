@@ -23,9 +23,11 @@ def clean_newlines(func: callable) -> callable:
 def process_multivalued_field(func: callable) -> callable:
     @clean_whitespace
     @clean_newlines
-    def wrapped(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         result = str(func(*args, **kwargs))
         return result if result else 'нема'
+
+    return wrapper
 
 
 def prepend_base_url(func: callable) -> callable:
