@@ -34,20 +34,20 @@ def get_course_tables_rows_flattened(course_tables: list[Tag]) -> list[Tag]:
     ]
 
 
-@cache
 @clean_whitespace
+@cache
 def parse_course_code(course_row: Tag) -> str:
     return course_row.select_one(COURSE_HEADER_CODE_SELECTOR).text
 
 
-@cache
 @clean_whitespace
+@cache
 def parse_course_name(course_row: Tag) -> str:
     return course_row.select_one(COURSE_HEADER_NAME_AND_URL_SELECTOR).text
 
 
-@cache
 @process_url
+@cache
 def parse_course_url(course_row: Tag) -> str:
     return course_row.select_one(COURSE_HEADER_NAME_AND_URL_SELECTOR)['href']
 
@@ -67,8 +67,8 @@ parse_fields = {
 }
 
 
-@cache
 @validate_course
+@cache
 def parse_course_header(course_row: Tag) -> CourseHeader:
     course_header = CourseHeader(**parse_object(parse_fields, course_row))
     logging.info(f"Scraped course header {course_header}")

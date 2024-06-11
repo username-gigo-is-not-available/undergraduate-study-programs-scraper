@@ -1,4 +1,5 @@
 import logging
+from functools import cache
 
 from bs4 import BeautifulSoup, Tag
 from constants import (
@@ -9,7 +10,7 @@ from constants import (
     COURSE_DETAILS_NAME_SELECTOR,
     COURSE_TABLES_CLASS_NAME, COURSE_DETAILS_SEMESTER_SEASON_SELECTOR
 )
-from decorators import clean_whitespace, validate_course
+from decorators import clean_whitespace, validate_course, process_multivalued_field
 from enums import CourseSeason
 from models import CourseDetails
 from parsers import parse_object
@@ -29,25 +30,28 @@ def parse_course_name(course_table: Tag) -> str:
     return course_table.select_one(COURSE_DETAILS_NAME_SELECTOR).text
 
 
+@cache
 def parse_academic_year(course_table: Tag) -> int:
     return int(course_table.select_one(COURSE_DETAILS_ACADEMIC_YEAR_SELECTOR).text.strip())
 
 
 @clean_whitespace
+@cache
 def parse_course_season(course_table: Tag) -> str:
     return CourseSeason(course_table.select_one(COURSE_DETAILS_SEMESTER_SEASON_SELECTOR).text.capitalize()).value
 
 
-@clean_whitespace
+@process_multivalued_field
+@cache
 def parse_course_professors(course_table: Tag) -> str:
-    professors = course_table.select_one(COURSE_DETAILS_PROFESSORS_SELECTOR).text
-    return professors if professors else 'нема'
+    return course_table.select_one(COURSE_DETAILS_PROFESSORS_SELECTOR).text
 
 
-@clean_whitespace
+@process_multivalued_field
+@cache
 def parse_course_prerequisite(course_table: Tag) -> str:
-    prerequisite = course_table.select_one(COURSE_DETAILS_PREREQUISITE_SELECTOR).text
-    return prerequisite if prerequisite else 'нема'
+    return course_table.select_one(COURSE_DETAILS_PREREQUISITE_SELECTOR).text
+
 
 parse_fields = {
     'code': parse_course_code,

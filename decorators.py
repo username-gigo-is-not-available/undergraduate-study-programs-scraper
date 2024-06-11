@@ -4,13 +4,28 @@ from settings import BASE_URL, INVALID_COURSE_CODES
 
 def clean_whitespace(func: callable) -> callable:
     def wrapper(*args, **kwargs):
-        result = func(*args, **kwargs)
-        if isinstance(result, str):
-            cleaned_result = ' '.join(result.split())
-            return cleaned_result
-        return result
+        result = str(func(*args, **kwargs))
+        cleaned_result = ' '.join(result.split())
+        return cleaned_result
 
     return wrapper
+
+
+def clean_newlines(func: callable) -> callable:
+    def wrapper(*args, **kwargs):
+        result = str(func(*args, **kwargs))
+        cleaned_result = ', '.join(filter(lambda x: x, result.split('\n')))
+        return cleaned_result
+
+    return wrapper
+
+
+def process_multivalued_field(func: callable) -> callable:
+    @clean_whitespace
+    @clean_newlines
+    def wrapped(*args, **kwargs):
+        result = str(func(*args, **kwargs))
+        return result if result else 'нема'
 
 
 def prepend_base_url(func: callable) -> callable:
