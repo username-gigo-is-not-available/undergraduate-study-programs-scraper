@@ -2,6 +2,14 @@ from urllib.parse import urlparse
 from settings import BASE_URL, INVALID_COURSE_CODES
 
 
+def replace_nulls(func: callable) -> callable:
+    def wrapper(*args, **kwargs):
+        result = str(func(*args, **kwargs))
+        return result if result else 'нема'
+
+    return wrapper
+
+
 def clean_whitespace(func: callable) -> callable:
     def wrapper(*args, **kwargs):
         result = str(func(*args, **kwargs))
@@ -21,11 +29,11 @@ def clean_newlines(func: callable) -> callable:
 
 
 def process_multivalued_field(func: callable) -> callable:
+    @replace_nulls
     @clean_whitespace
     @clean_newlines
     def wrapper(*args, **kwargs):
-        result = str(func(*args, **kwargs))
-        return result if result else 'нема'
+        return func(*args, **kwargs)
 
     return wrapper
 
