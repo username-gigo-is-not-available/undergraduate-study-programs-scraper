@@ -1,103 +1,26 @@
 import asyncio
-import os
-import ssl
 import time
 import logging
-import aiohttp
-import certifi
-import pandas as pd
-from pathlib import Path
-from typing import Any
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from bs4 import BeautifulSoup
-from constants import STUDY_PROGRAMS_2023_LI_SELECTOR
-from extract.course_details import parse_course_details, get_course_table
-from extract.course_header import get_course_tables, parse_course_header, get_course_tables_rows_flattened
-from extract.study_program import parse_study_program
-from formatters import format_curriculum_data, format_course_details
-from models import StudyProgram
-from predicates import is_macedonian_study_program, is_course_row
-from settings import ENVIRONMENT_VARIABLES, get_executor, STUDY_PROGRAMS_URL
+
+from utils.asynchronisity import get_study_programs_data, get_course_data, \
+    get_curriculum_data
+from settings import ENVIRONMENT_VARIABLES, get_executor
+from utils.data_and_parsing import save_data, prepare_data_for_saving
 
 logging.basicConfig(level=logging.INFO)
 
 
-async def fetch_page(url: str) -> str:
-    ssl_context = ssl.create_default_context(cafile=certifi.where())
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, ssl=ssl_context) as response:
-            return await response.text()
-
-
-async def parse_study_program_data() -> list[StudyProgram]:
-    html = await fetch_page(STUDY_PROGRAMS_URL)
-    soup = BeautifulSoup(html, 'html.parser')
-    study_programs = soup.select(STUDY_PROGRAMS_2023_LI_SELECTOR)
-    return [parse_study_program(study_program) for study_program in study_programs]
-
-
-async def parse_curriculum_data(study_program: StudyProgram) -> pd.DataFrame:
-    html = await fetch_page(study_program.url)
-    soup = BeautifulSoup(html, 'html.parser')
-    logging.info(f"Getting curriculum data {study_program}")
-    course_tables = get_course_tables(soup)
-    course_rows = [parse_course_header(course_row) for course_row in get_course_tables_rows_flattened(course_tables) if
-                   is_course_row(course_row)]
-    return pd.DataFrame(format_curriculum_data(study_program, course_rows))
-
-
-async def parse_course_data(course_urls: list[str]) -> pd.DataFrame:
-    result = []
-    for course_url in course_urls:
-        html = await fetch_page(course_url)
-        soup = BeautifulSoup(html, 'html.parser')
-        course_details = parse_course_details(get_course_table(soup))
-        result.append(format_course_details(course_details))
-    return pd.DataFrame(result)
-
-
-def run_curriculum_data(study_program: StudyProgram) -> pd.DataFrame:
-    return asyncio.run(parse_curriculum_data(study_program))
-
-
-def run_course_data(course_urls: list[str]) -> pd.DataFrame:
-    return asyncio.run(parse_course_data(course_urls))
-
-
-def run_tasks_in_executor(loop: asyncio.AbstractEventLoop, executor: ThreadPoolExecutor | ProcessPoolExecutor,
-                          function: callable,
-                          *args: Any) -> list:
-    return [loop.run_in_executor(executor, function, arg) for arg in args]
-
-
-def save_data(data: dict[str, pd.DataFrame], output_dir: str) -> None:
-    os.makedirs(output_dir, exist_ok=True)
-    for name, data_frame in data.items():
-        data_frame.to_csv(Path(output_dir) / f"{name}.csv", index=False)
-
-
 async def main():
+    logging.info("Starting...")
     start = time.perf_counter()
-    study_programs = list(filter(is_macedonian_study_program, await parse_study_program_data()))
     loop = asyncio.get_event_loop()
     executor_type = get_executor()
+    study_programs_data = await get_study_programs_data()
     with executor_type as executor:
-        tasks = run_tasks_in_executor(loop, executor, run_curriculum_data, *study_programs)
-        df_curriculum = await asyncio.gather(*tasks)
-        course_urls = pd.concat(df_curriculum)['Course URL'].drop_duplicates().tolist()
-        chunk_size = len(course_urls) // len(study_programs)
-        chunks = [course_urls[i:i + chunk_size] for i in range(0, len(course_urls), chunk_size)]
-        tasks = run_tasks_in_executor(loop, executor, run_course_data, *chunks)
-        df_course = await asyncio.gather(*tasks)
+        curricula_data = await get_curriculum_data(executor, loop, study_programs_data)
+        courses_data = await get_course_data(executor, loop, curricula_data)
 
-    curriculum_data = pd.concat(df_curriculum)
-    course_data = pd.concat(df_course)
-    result = pd.merge(curriculum_data, course_data, on=['Course Code', 'Course Name'], how='inner')
-    data = {
-        'curriculum': curriculum_data,
-        'courses': course_data,
-        'result': result
-    }
+    data = prepare_data_for_saving(study_programs_data, curricula_data, courses_data)
     output_dir = ENVIRONMENT_VARIABLES.get('OUTPUT_DIRECTORY_PATH', '.')
     save_data(data, output_dir)
     logging.info(f"Time taken: {time.perf_counter() - start}")
