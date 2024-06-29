@@ -5,9 +5,9 @@ which can be found at the following [url](https://finki.ukim.mk/mk/dodiplomski-s
 
 The scraper will save the scraped data in three different files:
 
+- `study_programs.csv`: contains the details of the study programs
 - `curriculum.csv`: contains the details of the study programs and related courses
 - `courses.csv`: contains the details of the courses
-- `results.csv`: contains the merged data from the curriculum and the courses
 
 ## Requirements
 
