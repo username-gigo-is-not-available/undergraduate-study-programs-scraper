@@ -1,5 +1,6 @@
 import asyncio
 import csv
+import logging
 from asyncio import AbstractEventLoop
 from concurrent.futures import Executor
 from pathlib import Path
@@ -59,6 +60,7 @@ async def save_data(executor: Executor, loop: AbstractEventLoop, data: list[dict
 
 async def save_data_to_file(data_dict: dict[str, str | tuple], output_dir: str) -> None:
     file_name, rows, fields = data_dict.get("file_name"), data_dict.get("rows"), data_dict.get("fields")
+    logging.info(f"Saving data to file: {file_name}")
     with open(f"{Path(output_dir)}/{file_name}.csv", "w", newline="", encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow(fields)
