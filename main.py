@@ -9,7 +9,7 @@ from data_models.curriculum.model import Curriculum
 from data_models.study_program.model import StudyProgram
 from utils.data_processing import get_study_programs_data, get_curriculum_data, get_course_data
 from settings import ENVIRONMENT_VARIABLES, get_executor
-from utils.files import prepare_data_for_saving, save_data
+from utils.file_operations import prepare_data_for_saving, save_data
 
 logging.basicConfig(level=logging.INFO)
 
