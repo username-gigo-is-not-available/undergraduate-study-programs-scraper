@@ -9,7 +9,7 @@ from decorators.urls import process_url
 from data_models.course_header.enums import CourseType
 from data_models.course_header.model import CourseHeader
 from utils.filtering import is_course_row
-from utils.data_and_parsing import parse_object, fetch_page
+from utils.parsing import fetch_page, parse_object
 from data_models.course_header.css_selectors import (
     COURSE_TABLES_CLASS_NAME,
     COURSE_TABLE_ROWS_SELECTOR,

@@ -2,7 +2,7 @@ from bs4 import Tag, BeautifulSoup
 
 from data_models.study_program.css_selectors import STUDY_PROGRAMS_2023_LI_SELECTOR
 from decorators.urls import process_url
-from utils.data_and_parsing import parse_object, fetch_page
+from utils.parsing import fetch_page, parse_object
 from data_models.study_program.model import StudyProgram
 from data_models.study_program.css_selectors import (
     STUDY_PROGRAM_NAME_SELECTOR,

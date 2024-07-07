@@ -13,7 +13,7 @@ from data_models.course_details.css_selectors import (
 from data_models.course_header.model import CourseHeader
 from data_models.course_details.enums import CourseSeason
 from data_models.course_details.model import CourseDetails
-from utils.data_and_parsing import parse_object, fetch_page
+from utils.parsing import fetch_page, parse_object
 
 
 def get_course_table(soup: BeautifulSoup) -> Tag:
