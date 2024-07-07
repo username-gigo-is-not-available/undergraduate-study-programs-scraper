@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.INFO)
 async def main():
     logging.info("Starting...")
     start: float = time.perf_counter()
-    loop: AbstractEventLoop = asyncio.get_event_loop()
     executor_type: Executor = get_executor()
     output_directory: str = ENVIRONMENT_VARIABLES.get('OUTPUT_DIRECTORY_PATH', '.')
     study_programs_data: list[StudyProgram] = await get_study_programs_data()
