@@ -4,7 +4,7 @@ from data_models.course_details.model import CourseDetails
 from data_models.course_header.model import CourseHeader
 from data_models.curriculum.model import Curriculum
 from data_models.study_program.model import StudyProgram
-from settings import get_max_workers
+from static import MAX_WORKERS
 
 lock: Lock = Lock()
 
@@ -32,7 +32,7 @@ def get_unique_course_headers(curriculums: list[Curriculum]) -> list[CourseHeade
 
 
 def get_data_chunk_size(data: list) -> int:
-    return len(data) // get_max_workers()
+    return len(data) // MAX_WORKERS
 
 
 def split_data_into_chunks(data: list) -> list[list[CourseHeader | Curriculum | CourseDetails | StudyProgram]]:
