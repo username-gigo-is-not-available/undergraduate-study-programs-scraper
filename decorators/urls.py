@@ -43,9 +43,9 @@ def validate_url(func: callable) -> callable:
 
 
 def process_url(func: callable) -> callable:
-    @wraps(func)
     @validate_url
     @prepend_base_url
+    @wraps(func)
     def wrapper_process_url(*args, **kwargs) -> str:
         return func(*args, **kwargs)
 

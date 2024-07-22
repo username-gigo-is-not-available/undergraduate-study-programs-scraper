@@ -1,7 +1,7 @@
 import logging
 from functools import wraps
 
-from settings import ENVIRONMENT_VARIABLES
+from static import ENVIRONMENT_VARIABLES
 
 
 def validate_env_variables(func):
