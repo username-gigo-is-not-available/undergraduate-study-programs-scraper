@@ -35,7 +35,7 @@ def run_save_data_to_file(data: dict[str, str | tuple], output_dir: str) -> None
     return asyncio.run(save_data_to_file(data, output_dir))
 
 
-async def save_data(executor: Executor, data: list[dict[str, str | tuple]], output_dir: str) -> None:
+async def save_data(executor: Executor, data: list[dict[str, str | tuple]], output_dir: Path) -> None:
     loop = asyncio.get_event_loop()
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     tasks: list[Future[None]] = [loop.run_in_executor(executor, run_save_data_to_file, item, output_dir) for item in data]
