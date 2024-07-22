@@ -1,12 +1,13 @@
 import asyncio
 import time
 import logging
-from asyncio import AbstractEventLoop
 from concurrent.futures import Executor
 
 from data_models.course_details.model import CourseDetails
 from data_models.curriculum.model import Curriculum
 from data_models.study_program.model import StudyProgram
+from decorators.environment_variables import validate_env_variables
+from decorators.urls import check_if_base_url_is_accessible
 from utils.data_processing import get_study_programs_data, get_curriculum_data, get_course_data
 from settings import ENVIRONMENT_VARIABLES, get_executor
 from utils.file_operations import prepare_data_for_saving, save_data
@@ -14,6 +15,8 @@ from utils.file_operations import prepare_data_for_saving, save_data
 logging.basicConfig(level=logging.INFO)
 
 
+@check_if_base_url_is_accessible
+@validate_env_variables
 async def main():
     logging.info("Starting...")
     start: float = time.perf_counter()
