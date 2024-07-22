@@ -1,4 +1,3 @@
-import os
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from static import MAX_WORKERS, ENVIRONMENT_VARIABLES
