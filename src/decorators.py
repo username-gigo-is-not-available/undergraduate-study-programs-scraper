@@ -8,7 +8,7 @@ from requests import Response
 from static import BASE_URL
 
 
-def check_if_base_url_is_accessible(func):
+def check_if_url_is_accessible(func):
     @wraps(func)
     def wrapper_check_if_base_url_is_accessible(*args, **kwargs):
         logging.info(f"Checking if base URL is accessible: {BASE_URL}")
