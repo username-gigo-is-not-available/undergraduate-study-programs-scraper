@@ -16,7 +16,11 @@ The scraper will save the scraped data in three different files:
 ## Environment Variables
 
 Before running the scraper, make sure to set the following environment variables:
-
+- `STORAGE_TYPE`: the type of storage that will be used to save the scraped data. The possible values are "FILE" and "MINIO"
+- `MINIO_ENDPOINT_URL`: the URL of the MinIO server
+- `MINIO_ACCESS_KEY`: the access key for the MinIO server
+- `MINIO_SECRET_KEY`: the secret key for the MinIO server
+- `MINIO_BUCKET_NAME`: the name of the bucket where the output files will be saved
 - `OUTPUT_DIRECTORY_PATH`: the path to the directory where the output files will be saved
 - `MAX_WORKERS`: the maximum number of workers that will be used to scrape the website
 - `EXECUTOR_TYPE`: the type of executor that will be used to scrape the website. The possible values are "THREAD" and "PROCESS"
@@ -24,7 +28,7 @@ Before running the scraper, make sure to set the following environment variables
 - `CURRICULUM_DATA_OUTPUT_FILE_NAME`: the name of the file where the curriculum data will be saved
 - `COURSES_DATA_OUTPUT_FILE_NAME`: the name of the file where the courses data will be saved
 - `LOCK_TIMEOUT_SECONDS`: the timeout for all locks in seconds
-- `REQUEST_TIMEOUT`: the timeout for all HTTP requests in seconds
+- `REQUEST_TIMEOUT_SECONDS`: the timeout for all HTTP requests in seconds
 
 ## Installation
 
