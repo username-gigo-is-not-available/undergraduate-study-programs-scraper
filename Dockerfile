@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM python:3.12.4-alpine as builder
+FROM python:3.13.0-alpine as builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -15,7 +15,7 @@ RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.12.4-alpine
+FROM python:3.13.0-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
