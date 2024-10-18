@@ -46,7 +46,7 @@ class StorageMixin:
     MINIO_CLIENT = Minio(MINIO_ENDPOINT_URL, access_key=MINIO_ACCESS_KEY, secret_key=MINIO_SECRET_KEY, secure=False)
 
     @classmethod
-    def save_data_to_file(cls, data: list[NamedTuple], field_names: list[str], file_name: Path) -> None:
+    def save_data_to_local_storage(cls, data: list[NamedTuple], field_names: list[str], file_name: Path) -> None:
         try:
             with open(f"{Path(cls.OUTPUT_DIRECTORY_PATH / file_name)}", "w", newline="", encoding='utf-8') as file:
                 writer = csv.writer(file)
@@ -87,11 +87,11 @@ class StorageMixin:
     async def save_data(cls, data: list[NamedTuple], file_name: Path, executor: Executor = None) -> None:
         loop: AbstractEventLoop = asyncio.get_event_loop()
 
-        if cls.STORAGE_TYPE == 'FILE':
+        if cls.STORAGE_TYPE == 'LOCAL':
 
             cls.OUTPUT_DIRECTORY_PATH.mkdir(parents=True, exist_ok=True)
             logging.info(f"Saving data to file {file_name}")
-            await loop.run_in_executor(executor, cls.save_data_to_file, data, list(data)[0]._fields, file_name)
+            await loop.run_in_executor(executor, cls.save_data_to_local_storage, data, list(data)[0]._fields, file_name)
 
         elif cls.STORAGE_TYPE == 'MINIO':
 

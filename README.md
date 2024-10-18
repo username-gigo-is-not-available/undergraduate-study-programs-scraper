@@ -16,7 +16,7 @@ The scraper will save the scraped data in three different files:
 ## Environment Variables
 
 Before running the scraper, make sure to set the following environment variables:
-- `STORAGE_TYPE`: the type of storage that will be used to save the scraped data. The possible values are "FILE" and "MINIO"
+- `STORAGE_TYPE`: the type of storage that will be used to save the scraped data. The possible values are "LOCAL" and "MINIO"
 - `MINIO_ENDPOINT_URL`: the URL of the MinIO server
 - `MINIO_ACCESS_KEY`: the access key for the MinIO server
 - `MINIO_SECRET_KEY`: the secret key for the MinIO server
