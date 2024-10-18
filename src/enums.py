@@ -1,9 +1,9 @@
-from enum import  StrEnum
+from enum import StrEnum, auto
 
 
 class CourseType(StrEnum):
-    MANDATORY = 'Задолжителен'
-    ELECTIVE = 'Изборен'
+    MANDATORY = auto()
+    ELECTIVE = auto()
 
     @classmethod
     def from_bool(cls, value: bool) -> 'CourseType':
