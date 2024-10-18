@@ -6,13 +6,11 @@ from concurrent.futures import Executor
 from src.parsers.curriculum_parser import CurriculumParser
 from src.parsers.course_details_parser import CourseDetailsParser
 from src.parsers.study_program_parser import StudyProgramParser
-from src.decorators import check_if_url_is_accessible
 from settings import get_executor
 
 logging.basicConfig(level=logging.INFO)
 
 
-@check_if_url_is_accessible
 async def main():
     logging.info("Starting...")
     start: float = time.perf_counter()

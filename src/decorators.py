@@ -1,25 +1,7 @@
-import logging
 from functools import wraps
 from urllib.parse import urlparse, ParseResult
 
-import requests
-from requests import Response
-
 from static import BASE_URL
-
-
-def check_if_url_is_accessible(func):
-    @wraps(func)
-    def wrapper_check_if_base_url_is_accessible(*args, **kwargs):
-        logging.info(f"Checking if base URL is accessible: {BASE_URL}")
-        response: Response = requests.get(BASE_URL)
-        if response.status_code == 200:
-            logging.info(f"Base URL is accessible: {BASE_URL}")
-            return func(*args, **kwargs)
-        else:
-            raise ConnectionError(f"Base URL is not accessible. Status code: {response.status_code}")
-
-    return wrapper_check_if_base_url_is_accessible
 
 
 def prepend_base_url(func: callable) -> callable:
