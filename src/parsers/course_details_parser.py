@@ -70,8 +70,10 @@ class CourseDetailsParser(Parser):
                                    executor: Executor = None,
                                    *args,
                                    **kwargs
-                                   ) -> None:
-        data: list[CourseDetails] = await cls.scrape_data(
+                                   ) -> list[CourseDetails]:
+        data: list[CourseDetails] = await super().scrape_and_save_data(
+            file_name=cls.COURSES_DATA_OUTPUT_FILE_NAME,
+            column_order=list(CourseDetails._fields),
             output_event=cls.COURSE_DETAILS_DONE,
             output_queue=cls.COURSE_DETAILS_QUEUE,
             executor=executor,
@@ -80,8 +82,8 @@ class CourseDetailsParser(Parser):
             lock=cls.LOCK,
             input_event=CurriculumParser.COURSE_HEADERS_READY,
             input_queue=CurriculumParser.COURSE_HEADERS_QUEUE,
+            ready_log_msg="CurriculumParser has finished scraping course headers",
             *args,
             **kwargs
         )
-
-        await cls.save_data(executor=executor, data=data, file_name=cls.COURSES_DATA_OUTPUT_FILE_NAME)
+        return data

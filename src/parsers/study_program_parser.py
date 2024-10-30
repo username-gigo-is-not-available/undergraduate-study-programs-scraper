@@ -64,12 +64,13 @@ class StudyProgramParser(Parser):
                                    *args,
                                    **kwargs
                                    ) -> list[StudyProgram]:
-        data: list[StudyProgram] = await cls.scrape_data(
+        return await super().scrape_and_save_data(
+            file_name=cls.STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME,
+            column_order=list(StudyProgram._fields),
             output_event=cls.STUDY_PROGRAMS_DONE_EVENT,
             output_queue=cls.STUDY_PROGRAMS_QUEUE,
             parse_func=cls.parse_data,
             done_log_msg="Finished scraping study programs",
             *args,
-            **kwargs)
-        await cls.save_data(executor=executor, data=data, file_name=cls.STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME)
-        return data
+            **kwargs
+        )

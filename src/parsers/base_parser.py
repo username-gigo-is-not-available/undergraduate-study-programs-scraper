@@ -48,6 +48,7 @@ class Parser(ABC, ThreadSafetyMixin, StorageMixin, HTTPClientMixin):
             lock: threading.Lock = None,
             input_event: asyncio.Event = None,
             input_queue: asyncio.Queue = None,
+            ready_log_msg: str = None,
             flatten: bool = False,
             *args,
             **kwargs
@@ -56,6 +57,7 @@ class Parser(ABC, ThreadSafetyMixin, StorageMixin, HTTPClientMixin):
 
         if input_event:
             await input_event.wait()
+            logging.info(ready_log_msg)
 
         if input_queue:
             while True:
@@ -97,14 +99,16 @@ class Parser(ABC, ThreadSafetyMixin, StorageMixin, HTTPClientMixin):
     @classmethod
     async def scrape_and_save_data(cls,
                                    file_name: Path,
+                                   column_order: list[str],
                                    output_event: asyncio.Event,
                                    output_queue: asyncio.Queue,
-                                   executor: Executor,
                                    parse_func: callable,
                                    done_log_msg: str,
+                                   executor: Executor = None,
                                    lock: threading.Lock = None,
                                    input_event: asyncio.Event = None,
                                    input_queue: asyncio.Queue = None,
+                                   ready_log_msg: str = None,
                                    flatten: bool = False,
                                    *args,
                                    **kwargs
@@ -119,8 +123,9 @@ class Parser(ABC, ThreadSafetyMixin, StorageMixin, HTTPClientMixin):
             done_log_msg=done_log_msg,
             input_event=input_event,
             input_queue=input_queue,
+            ready_log_msg=ready_log_msg,
             flatten=flatten,
             *args,
             **kwargs)
-        await cls.save_data(executor=executor, data=data, file_name=file_name)
+        await cls.save_data(data=data, output_file_name=file_name, column_order=column_order)
         return data

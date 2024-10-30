@@ -109,8 +109,10 @@ class CurriculumParser(Parser):
                                    executor: Executor = None,
                                    *args,
                                    **kwargs
-                                   ) -> None:
-        data: list[Curriculum] = await cls.scrape_data(
+                                   ) -> list[Curriculum]:
+        data: list[Curriculum] = await super().scrape_and_save_data(
+            file_name=cls.CURRICULA_DATA_OUTPUT_FILE_NAME,
+            column_order=list(Curriculum._fields),
             output_event=cls.CURRICULA_DONE,
             output_queue=cls.CURRICULA_QUEUE,
             executor=executor,
@@ -119,9 +121,9 @@ class CurriculumParser(Parser):
             lock=cls.LOCK,
             input_event=StudyProgramParser.STUDY_PROGRAMS_DONE_EVENT,
             input_queue=StudyProgramParser.STUDY_PROGRAMS_QUEUE,
+            ready_log_msg="StudyProgramParser has finished scraping study programs",
             flatten=True,
             *args,
             **kwargs
         )
-
-        await cls.save_data(executor=executor, data=data, file_name=cls.CURRICULA_DATA_OUTPUT_FILE_NAME)
+        return data
