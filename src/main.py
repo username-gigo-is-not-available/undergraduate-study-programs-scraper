@@ -6,7 +6,7 @@ from concurrent.futures import Executor
 from src.parsers.curriculum_parser import CurriculumParser
 from src.parsers.course_details_parser import CourseDetailsParser
 from src.parsers.study_program_parser import StudyProgramParser
-from settings import get_executor
+from src.patterns.factory import executor_factory
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 async def main():
     logging.info("Starting...")
     start: float = time.perf_counter()
-    executor_type: Executor = get_executor()
+    executor_type: Executor = executor_factory()
     await StudyProgramParser.scrape_and_save_data()
     tasks = []
     with executor_type as executor:
