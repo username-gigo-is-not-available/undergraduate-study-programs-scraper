@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 import threading
 from abc import ABC, abstractmethod
@@ -48,16 +49,15 @@ class Parser(ABC, ThreadSafetyMixin, StorageMixin, HTTPClientMixin):
             lock: threading.Lock = None,
             input_event: asyncio.Event = None,
             input_queue: asyncio.Queue = None,
-            ready_log_msg: str = None,
             flatten: bool = False,
             *args,
             **kwargs
     ) -> list[NamedTuple]:
+
         loop: AbstractEventLoop = asyncio.get_event_loop()
 
         if input_event:
             await input_event.wait()
-            logging.info(ready_log_msg)
 
         if input_queue:
             while True:
@@ -108,7 +108,6 @@ class Parser(ABC, ThreadSafetyMixin, StorageMixin, HTTPClientMixin):
                                    lock: threading.Lock = None,
                                    input_event: asyncio.Event = None,
                                    input_queue: asyncio.Queue = None,
-                                   ready_log_msg: str = None,
                                    flatten: bool = False,
                                    *args,
                                    **kwargs
@@ -123,7 +122,6 @@ class Parser(ABC, ThreadSafetyMixin, StorageMixin, HTTPClientMixin):
             done_log_msg=done_log_msg,
             input_event=input_event,
             input_queue=input_queue,
-            ready_log_msg=ready_log_msg,
             flatten=flatten,
             *args,
             **kwargs)

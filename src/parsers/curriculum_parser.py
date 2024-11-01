@@ -29,9 +29,10 @@ class CurriculumParser(Parser):
     COURSE_HEADERS_READY: Event = Event()
     CURRICULUM_SUGGESTED_SEMESTER_SELECTOR: str = 'td:nth-child(3)'
     CURRICULUM_ELECTIVE_GROUP_SELECTOR: str = 'td:nth-child(4)'
-    LOCK: threading.Lock = threading.Lock()
-    CURRICULA_DONE: Event = Event()
     CURRICULA_QUEUE: Queue = Queue()
+    CURRICULA_DONE: Event = Event()
+    CURRICULA_DONE_MESSAGE: str = "Finished processing curricula"
+    LOCK: threading.Lock = threading.Lock()
 
     @classmethod
     def get_field_parsers(cls, element: Tag) -> list[FieldParser]:
@@ -117,11 +118,10 @@ class CurriculumParser(Parser):
             output_queue=cls.CURRICULA_QUEUE,
             executor=executor,
             parse_func=cls.run_parse_data,
-            done_log_msg="Finished scraping curricula",
+            done_log_msg=cls.CURRICULA_DONE_MESSAGE,
             lock=cls.LOCK,
             input_event=StudyProgramParser.STUDY_PROGRAMS_DONE_EVENT,
             input_queue=StudyProgramParser.STUDY_PROGRAMS_QUEUE,
-            ready_log_msg="StudyProgramParser has finished scraping study programs",
             flatten=True,
             *args,
             **kwargs

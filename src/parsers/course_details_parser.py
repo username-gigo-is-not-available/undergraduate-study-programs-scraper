@@ -30,6 +30,7 @@ class CourseDetailsParser(Parser):
     COURSE_DETAILS_SEMESTER_SEASON_SELECTOR: str = 'tr:nth-child(6) > td:nth-child(2) > p:nth-child(2) > span:nth-child(2)'
     COURSE_DETAILS_QUEUE: Queue = Queue()
     COURSE_DETAILS_DONE: asyncio.Event = asyncio.Event()
+    COURSE_DETAILS_DONE_MESSAGE: str = "Finished processing course details"
     LOCK: threading.Lock = threading.Lock()
 
     @classmethod
@@ -78,11 +79,10 @@ class CourseDetailsParser(Parser):
             output_queue=cls.COURSE_DETAILS_QUEUE,
             executor=executor,
             parse_func=cls.run_parse_data,
-            done_log_msg="Finished scraping course details",
+            done_log_msg=cls.COURSE_DETAILS_DONE_MESSAGE,
             lock=cls.LOCK,
             input_event=CurriculumParser.COURSE_HEADERS_READY,
             input_queue=CurriculumParser.COURSE_HEADERS_QUEUE,
-            ready_log_msg="CurriculumParser has finished scraping course headers",
             *args,
             **kwargs
         )

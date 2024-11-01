@@ -24,6 +24,7 @@ class StudyProgramParser(Parser):
     STUDY_PROGRAM_DURATION_SELECTOR: str = 'span:nth-child(2)'
     STUDY_PROGRAMS_QUEUE: Queue = Queue()
     STUDY_PROGRAMS_DONE_EVENT: asyncio.Event = asyncio.Event()
+    STUDY_PROGRAMS_DONE_MESSAGE: str = "Finished processing study programs"
 
     @classmethod
     def get_field_parsers(cls, element: Tag) -> list[FieldParser]:
@@ -70,7 +71,7 @@ class StudyProgramParser(Parser):
             output_event=cls.STUDY_PROGRAMS_DONE_EVENT,
             output_queue=cls.STUDY_PROGRAMS_QUEUE,
             parse_func=cls.parse_data,
-            done_log_msg="Finished scraping study programs",
+            done_log_msg=cls.STUDY_PROGRAMS_DONE_MESSAGE,
             *args,
             **kwargs
         )
