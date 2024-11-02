@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import logging
 import threading
 from abc import ABC, abstractmethod
@@ -8,9 +7,11 @@ from concurrent.futures import Executor
 from functools import partial
 from pathlib import Path
 from typing import NamedTuple
+
 from bs4 import Tag
-from src.parsers.field_parser import FieldParser
+
 from src.mixins import ThreadSafetyMixin, StorageMixin, HTTPClientMixin
+from src.parsers.field_parser import FieldParser
 
 
 class Parser(ABC, ThreadSafetyMixin, StorageMixin, HTTPClientMixin):

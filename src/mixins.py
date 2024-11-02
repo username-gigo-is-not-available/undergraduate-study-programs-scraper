@@ -5,7 +5,7 @@ import ssl
 import threading
 from concurrent.futures import Executor
 from pathlib import Path
-from typing import NamedTuple, List
+from typing import NamedTuple
 
 import aiohttp
 import certifi

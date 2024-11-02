@@ -2,7 +2,7 @@ import csv
 import logging
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import BinaryIO, NamedTuple, List
+from typing import BinaryIO, NamedTuple
 
 import pandas as pd
 from minio import S3Error, Minio
