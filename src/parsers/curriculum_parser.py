@@ -14,12 +14,12 @@ from src.parsers.base_parser import Parser
 from src.parsers.field_parser import FieldParser
 from src.models import Curriculum, StudyProgram, CourseHeader
 from src.parsers.study_program_parser import StudyProgramParser
-from src.static import ENVIRONMENT_VARIABLES
+from src.config import Config
 
 
 class CurriculumParser(Parser):
     # https://finki.ukim.mk/program/{program_name}
-    CURRICULA_DATA_OUTPUT_FILE_NAME: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_DATA_OUTPUT_FILE_NAME'))
+    CURRICULA_DATA_OUTPUT_FILE_NAME: Path = Config.CURRICULA_DATA_OUTPUT_FILE_NAME
     COURSE_HEADER_TABLES_CLASS_NAME: str = 'table.table-striped.table.table-bordered.table-sm'
     COURSE_HEADER_TABLE_ROWS_SELECTOR: str = 'tr'
     COURSE_HEADER_CODE_SELECTOR: str = 'td:nth-child(1)'

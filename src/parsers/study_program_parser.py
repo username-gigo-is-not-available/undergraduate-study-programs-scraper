@@ -11,12 +11,12 @@ from bs4 import Tag, BeautifulSoup
 from src.parsers.base_parser import Parser
 from src.parsers.field_parser import FieldParser
 from src.models import StudyProgram
-from src.static import ENVIRONMENT_VARIABLES
+from src.config import Config
 
 
 class StudyProgramParser(Parser):
     # https://finki.ukim.mk/mk/dodiplomski-studii
-    STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME'))
+    STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME: Path = Config.STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME
     STUDY_PROGRAMS_URL: str = 'https://finki.ukim.mk/mk/dodiplomski-studii'
     STUDY_PROGRAMS_2023_LI_SELECTOR: str = 'div > div > div > div > div > ul > li > div'
     STUDY_PROGRAM_URL_SELECTOR: str = 'a[href]'

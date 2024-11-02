@@ -1,14 +1,14 @@
 from functools import wraps
 from urllib.parse import urlparse, ParseResult
 
-from static import BASE_URL
+from src.config import Config
 
 
 def prepend_base_url(func: callable) -> callable:
     @wraps(func)
     def wrapper_prepend_base_url(*args, **kwargs) -> str:
         result: str = str(func(*args, **kwargs))
-        return ''.join([BASE_URL, result])
+        return ''.join([Config.BASE_URL, result])
 
     return wrapper_prepend_base_url
 
