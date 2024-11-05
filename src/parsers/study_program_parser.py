@@ -8,6 +8,7 @@ from typing import List
 
 from bs4 import Tag, BeautifulSoup
 
+from src.enums import ProcessingType
 from src.parsers.base_parser import Parser
 from src.parsers.field_parser import FieldParser
 from src.models import StudyProgram
@@ -25,6 +26,7 @@ class StudyProgramParser(Parser):
     STUDY_PROGRAMS_QUEUE: Queue = Queue()
     STUDY_PROGRAMS_DONE_EVENT: asyncio.Event = asyncio.Event()
     STUDY_PROGRAMS_DONE_MESSAGE: str = "Finished processing study programs"
+    PROCESSING_STRATEGY: ProcessingType = ProcessingType.PRODUCER
 
     @classmethod
     def get_field_parsers(cls, element: Tag) -> list[FieldParser]:
@@ -60,18 +62,12 @@ class StudyProgramParser(Parser):
         return list(filter(is_macedonian_study_program, study_programs))
 
     @classmethod
-    async def scrape_and_save_data(cls,
-                                   executor: Executor = None,
-                                   *args,
-                                   **kwargs
-                                   ) -> list[StudyProgram]:
-        return await super().scrape_and_save_data(
-            file_name=cls.STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME,
-            column_order=list(StudyProgram._fields),
+    async def process_and_save_data(cls) -> list[StudyProgram]:
+        data: list[StudyProgram] = await cls.get_processing_strategy(cls.PROCESSING_STRATEGY).process(
+            parser_function=cls.parse_data,
             output_event=cls.STUDY_PROGRAMS_DONE_EVENT,
             output_queue=cls.STUDY_PROGRAMS_QUEUE,
-            parse_func=cls.parse_data,
-            done_log_msg=cls.STUDY_PROGRAMS_DONE_MESSAGE,
-            *args,
-            **kwargs
+            producer_done_message=cls.STUDY_PROGRAMS_DONE_MESSAGE
         )
+        await cls.save_data(data, cls.STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME, list(StudyProgram._fields))
+        return data

@@ -9,12 +9,13 @@ from queue import Queue
 
 from bs4 import Tag, BeautifulSoup
 
-from src.enums import CourseType
+from src.enums import CourseType, ProcessingType
 from src.parsers.base_parser import Parser
 from src.parsers.field_parser import FieldParser
 from src.models import Curriculum, StudyProgram, CourseHeader
 from src.parsers.study_program_parser import StudyProgramParser
 from src.config import Config
+from src.patterns.strategy import ProcessingStrategy
 
 
 class CurriculumParser(Parser):
@@ -26,13 +27,14 @@ class CurriculumParser(Parser):
     COURSE_HEADER_NAME_AND_URL_SELECTOR: str = 'td:nth-child(2) > a'
     COURSE_HEADERS_SET: set[CourseHeader] = set()
     COURSE_HEADERS_QUEUE: Queue = Queue()
-    COURSE_HEADERS_READY: Event = Event()
+    COURSE_HEADERS_READY_EVENT: Event = Event()
     CURRICULUM_SUGGESTED_SEMESTER_SELECTOR: str = 'td:nth-child(3)'
     CURRICULUM_ELECTIVE_GROUP_SELECTOR: str = 'td:nth-child(4)'
     CURRICULA_QUEUE: Queue = Queue()
-    CURRICULA_DONE: Event = Event()
+    CURRICULA_DONE_EVENT: Event = Event()
     CURRICULA_DONE_MESSAGE: str = "Finished processing curricula"
     LOCK: threading.Lock = threading.Lock()
+    PROCESSING_STRATEGY: ProcessingType = ProcessingType.CONSUMER
 
     @classmethod
     def get_field_parsers(cls, element: Tag) -> list[FieldParser]:
@@ -59,7 +61,7 @@ class CurriculumParser(Parser):
             if course_header not in cls.COURSE_HEADERS_SET:
                 cls.COURSE_HEADERS_SET.add(course_header)
                 cls.COURSE_HEADERS_QUEUE.put_nowait(course_header)
-                cls.COURSE_HEADERS_READY.set()
+                cls.COURSE_HEADERS_READY_EVENT.set()
                 return course_header
 
         study_program: StudyProgram = kwargs.get('study_program')
@@ -106,24 +108,20 @@ class CurriculumParser(Parser):
         return curricula
 
     @classmethod
-    async def scrape_and_save_data(cls,
-                                   executor: Executor = None,
-                                   *args,
-                                   **kwargs
-                                   ) -> list[Curriculum]:
-        data: list[Curriculum] = await super().scrape_and_save_data(
-            file_name=cls.CURRICULA_DATA_OUTPUT_FILE_NAME,
-            column_order=list(Curriculum._fields),
-            output_event=cls.CURRICULA_DONE,
-            output_queue=cls.CURRICULA_QUEUE,
+    async def process_and_save_data(cls, executor: Executor) -> list[Curriculum]:
+
+        processing_strategy: ProcessingStrategy = cls.get_processing_strategy(cls.PROCESSING_STRATEGY)
+
+        data: list[Curriculum] = await processing_strategy.process(
+            parser_function=cls.run_parse_data,
             executor=executor,
-            parse_func=cls.run_parse_data,
-            done_log_msg=cls.CURRICULA_DONE_MESSAGE,
-            lock=cls.LOCK,
             input_event=StudyProgramParser.STUDY_PROGRAMS_DONE_EVENT,
             input_queue=StudyProgramParser.STUDY_PROGRAMS_QUEUE,
-            flatten=True,
-            *args,
-            **kwargs
+            lock=cls.LOCK,
+            output_event=cls.CURRICULA_DONE_EVENT,
+            output_queue=cls.CURRICULA_QUEUE,
+            consumer_done_message=cls.CURRICULA_DONE_MESSAGE,
+            flatten=True
         )
+        await cls.save_data(data, cls.CURRICULA_DATA_OUTPUT_FILE_NAME, list(Curriculum._fields))
         return data

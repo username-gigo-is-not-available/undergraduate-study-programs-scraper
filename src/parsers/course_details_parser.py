@@ -8,6 +8,7 @@ from queue import Queue
 
 from bs4 import Tag, BeautifulSoup
 
+from src.enums import ProcessingType
 from src.parsers.base_parser import Parser
 from src.parsers.field_parser import FieldParser
 from src.parsers.curriculum_parser import CurriculumParser
@@ -29,9 +30,10 @@ class CourseDetailsParser(Parser):
     COURSE_DETAILS_ACADEMIC_YEAR_SELECTOR: str = 'tr:nth-child(6) > td:nth-child(2) > p:nth-child(2) > span:nth-child(1)'
     COURSE_DETAILS_SEMESTER_SEASON_SELECTOR: str = 'tr:nth-child(6) > td:nth-child(2) > p:nth-child(2) > span:nth-child(2)'
     COURSE_DETAILS_QUEUE: Queue = Queue()
-    COURSE_DETAILS_DONE: asyncio.Event = asyncio.Event()
+    COURSE_DETAILS_DONE_EVENT: asyncio.Event = asyncio.Event()
     COURSE_DETAILS_DONE_MESSAGE: str = "Finished processing course details"
     LOCK: threading.Lock = threading.Lock()
+    PROCESSING_STRATEGY: ProcessingType = ProcessingType.CONSUMER
 
     @classmethod
     def get_field_parsers(cls, element: Tag) -> list[FieldParser]:
@@ -67,23 +69,16 @@ class CourseDetailsParser(Parser):
         return await cls.parse_row(course_header=course_header, element=course_table)
 
     @classmethod
-    async def scrape_and_save_data(cls,
-                                   executor: Executor = None,
-                                   *args,
-                                   **kwargs
-                                   ) -> list[CourseDetails]:
-        data: list[CourseDetails] = await super().scrape_and_save_data(
-            file_name=cls.COURSES_DATA_OUTPUT_FILE_NAME,
-            column_order=list(CourseDetails._fields),
-            output_event=cls.COURSE_DETAILS_DONE,
-            output_queue=cls.COURSE_DETAILS_QUEUE,
+    async def process_and_save_data(cls, executor: Executor) -> list[CourseDetails]:
+        data: list[CourseDetails] = await cls.get_processing_strategy(cls.PROCESSING_STRATEGY).process(
+            parser_function=cls.run_parse_data,
             executor=executor,
-            parse_func=cls.run_parse_data,
-            done_log_msg=cls.COURSE_DETAILS_DONE_MESSAGE,
-            lock=cls.LOCK,
-            input_event=CurriculumParser.COURSE_HEADERS_READY,
+            input_event=CurriculumParser.COURSE_HEADERS_READY_EVENT,
             input_queue=CurriculumParser.COURSE_HEADERS_QUEUE,
-            *args,
-            **kwargs
+            lock=cls.LOCK,
+            output_event=cls.COURSE_DETAILS_DONE_EVENT,
+            output_queue=cls.COURSE_DETAILS_QUEUE,
+            consumer_done_message=cls.COURSE_DETAILS_DONE_MESSAGE
         )
+        await cls.save_data(data, cls.COURSES_DATA_OUTPUT_FILE_NAME, list(CourseDetails._fields))
         return data
