@@ -6,7 +6,7 @@ from typing import NamedTuple
 from bs4 import Tag
 
 from src.enums import ProcessingType
-from src.parsers.field_parser import FieldParser
+from src.parsers.models.field_parser import FieldParser
 from src.patterns.strategy import LocalStorage, MinioStorage, ProducerProcessingStrategy, ConsumerProcessingStrategy
 from src.config import Config
 
