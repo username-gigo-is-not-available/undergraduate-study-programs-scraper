@@ -8,7 +8,7 @@ from queue import Queue
 
 from bs4 import Tag, BeautifulSoup
 
-from src.enums import ProcessingType
+from src.enums import ProcessingType, CourseSemesterSeasonType
 from src.parsers.base_parser import Parser
 from src.parsers.field_parser import FieldParser
 from src.parsers.curriculum_parser import CurriculumParser
@@ -54,9 +54,14 @@ class CourseDetailsParser(Parser):
     async def parse_row(cls, *args, **kwargs) -> CourseDetails:
         course_header: CourseHeader = kwargs.get('course_header')
         course_table: Tag = kwargs.get('element')
+        fields: dict[str, str | int] = cls.parse_fields(element=course_table)
         course_details: CourseDetails = CourseDetails(
             *course_header,
-            **cls.parse_fields(element=course_table)
+            course_name_en=fields.get('course_name_en'),
+            course_semester_season=CourseSemesterSeasonType.from_str(fields.get('course_semester_season')),
+            course_academic_year=fields.get('course_academic_year'),
+            course_professors=fields.get('course_professors'),
+            course_prerequisites=fields.get('course_prerequisites')
         )
         logging.info(f"Scraped course details {course_details}")
         return course_details

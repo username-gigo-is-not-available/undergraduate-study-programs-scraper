@@ -1,15 +1,29 @@
 from enum import StrEnum, auto
 
 
-class ProcessingType(StrEnum):
+class UpperStrEnum(StrEnum):
+    def _generate_next_value_(name, start, count, last_values):
+        return name.upper()
+
+
+class ProcessingType(UpperStrEnum):
     PRODUCER = auto()
     CONSUMER = auto()
 
 
-class CourseType(StrEnum):
+class CourseType(UpperStrEnum):
     MANDATORY = auto()
     ELECTIVE = auto()
 
     @classmethod
     def from_bool(cls, value: bool) -> 'CourseType':
         return cls.ELECTIVE if value else cls.MANDATORY
+
+
+class CourseSemesterSeasonType(UpperStrEnum):
+    WINTER = auto()
+    SUMMER = auto()
+
+    @classmethod
+    def from_str(cls, value: str) -> 'CourseSemesterSeasonType':
+        return cls.WINTER if value == 'Зимски' else cls.SUMMER
