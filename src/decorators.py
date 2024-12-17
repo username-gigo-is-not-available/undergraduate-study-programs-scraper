@@ -2,6 +2,7 @@ from functools import wraps
 from urllib.parse import urlparse, ParseResult
 
 from src.config import Config
+from src.validators import CourseValidator
 
 
 def prepend_base_url(func: callable) -> callable:
@@ -32,3 +33,12 @@ def process_url(func: callable) -> callable:
         return func(*args, **kwargs)
 
     return wrapper_process_url
+
+
+def validate_course(func: callable) -> callable:
+    @wraps(func)
+    def wrapper_validate_course(*args, **kwargs):
+        fields: dict[str, str] = func(*args, **kwargs)
+        return CourseValidator.validate_course(fields)
+
+    return wrapper_validate_course

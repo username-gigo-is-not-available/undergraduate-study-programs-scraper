@@ -5,6 +5,7 @@ from typing import NamedTuple
 
 from bs4 import Tag
 
+from src.decorators import validate_course
 from src.enums import ProcessingType
 from src.parsers.models.field_parser import FieldParser
 from src.patterns.strategy import LocalStorage, MinioStorage, ProducerProcessingStrategy, ConsumerProcessingStrategy
@@ -58,6 +59,7 @@ class ProcessingMixin(ABC):
         pass
 
     @classmethod
+    @validate_course
     def parse_fields(cls, element: Tag) -> dict[str, str | int | bool]:
         return {field_parser.field_name: field_parser() for field_parser in cls.get_field_parsers(element)}
 

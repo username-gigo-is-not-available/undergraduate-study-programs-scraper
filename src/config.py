@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 from dotenv import dotenv_values
@@ -11,6 +12,7 @@ class Config:
 
     BASE_URL: str = "https://finki.ukim.mk"
     STUDY_PROGRAMS_URL: str = "https://finki.ukim.mk/mk/dodiplomski-studii"
+    COURSE_CODES_REGEX: re.Pattern[str] = re.compile(r'^F23L[1-3][SW]\d{3}')
 
     THREADS_PER_CPU_CORE: int = 5
     MAX_WORKERS: int = THREADS_PER_CPU_CORE * os.cpu_count() if ENVIRONMENT_VARIABLES.get('MAX_WORKERS') == 'MAX_WORKERS' else (
