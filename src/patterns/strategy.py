@@ -8,7 +8,6 @@ from io import BytesIO, StringIO
 from pathlib import Path
 from typing import BinaryIO, NamedTuple
 
-import pandas as pd
 from minio import S3Error
 
 from src.config import Config
@@ -16,7 +15,7 @@ from src.patterns.common import ThreadSafetyMixin
 
 
 class StorageStrategy:
-    async def save_data(self, data: pd.DataFrame, output_file_name: Path, column_order: list[str]) -> list[NamedTuple]:
+    async def save_data(self, data: list[NamedTuple], output_file_name: Path, column_order: list[str]) -> list[NamedTuple]:
         raise NotImplementedError
 
 
