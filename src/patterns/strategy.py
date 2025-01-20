@@ -14,12 +14,12 @@ from src.config import Config
 from src.patterns.common import ThreadSafetyMixin
 
 
-class StorageStrategy:
+class FileStorageStrategy:
     async def save_data(self, data: list[NamedTuple], output_file_name: Path, column_order: list[str]) -> list[NamedTuple]:
         raise NotImplementedError
 
 
-class LocalStorage(StorageStrategy):
+class LocalFileStorage(FileStorageStrategy):
 
     @classmethod
     async def save_data(cls, data: list[NamedTuple], output_file_name: Path, column_order: list[str]) -> list[NamedTuple]:
@@ -33,7 +33,7 @@ class LocalStorage(StorageStrategy):
             logging.error(f"Failed to save data to file {output_file_name}: {e}")
 
 
-class MinioStorage(StorageStrategy):
+class MinioFileStorage(FileStorageStrategy):
     @classmethod
     async def save_data(cls, data: list[NamedTuple], output_file_name: Path, column_order: list[str]) -> list[NamedTuple]:
         try:

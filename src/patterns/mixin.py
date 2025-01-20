@@ -8,7 +8,7 @@ from bs4 import Tag
 from src.decorators import validate_course
 from src.enums import ProcessingType
 from src.parsers.models.field_parser import FieldParser
-from src.patterns.strategy import LocalStorage, MinioStorage, ProducerProcessingStrategy, ConsumerProcessingStrategy
+from src.patterns.strategy import LocalFileStorage, MinioFileStorage, ProducerProcessingStrategy, ConsumerProcessingStrategy
 from src.config import Config
 
 
@@ -19,11 +19,11 @@ class FileStorageMixin:
         if Config.FILE_STORAGE_TYPE == 'LOCAL':
             if not Config.OUTPUT_DIRECTORY_PATH.exists():
                 Config.OUTPUT_DIRECTORY_PATH.mkdir(parents=True)
-            return LocalStorage()
+            return LocalFileStorage()
         elif Config.FILE_STORAGE_TYPE == 'MINIO':
             if not Config.MINIO_CLIENT.bucket_exists(Config.MINIO_BUCKET_NAME):
                 Config.MINIO_CLIENT.make_bucket(Config.MINIO_BUCKET_NAME)
-            return MinioStorage()
+            return MinioFileStorage()
         else:
             raise ValueError(f"Unsupported storage type: {Config.FILE_STORAGE_TYPE}")
 
