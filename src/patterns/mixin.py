@@ -12,24 +12,24 @@ from src.patterns.strategy import LocalStorage, MinioStorage, ProducerProcessing
 from src.config import Config
 
 
-class StorageMixin:
+class FileStorageMixin:
 
     @classmethod
-    def get_storage_strategy(cls):
-        if Config.STORAGE_TYPE == 'LOCAL':
+    def get_file_storage_strategy(cls):
+        if Config.FILE_STORAGE_TYPE == 'LOCAL':
             if not Config.OUTPUT_DIRECTORY_PATH.exists():
                 Config.OUTPUT_DIRECTORY_PATH.mkdir(parents=True)
             return LocalStorage()
-        elif Config.STORAGE_TYPE == 'MINIO':
+        elif Config.FILE_STORAGE_TYPE == 'MINIO':
             if not Config.MINIO_CLIENT.bucket_exists(Config.MINIO_BUCKET_NAME):
                 Config.MINIO_CLIENT.make_bucket(Config.MINIO_BUCKET_NAME)
             return MinioStorage()
         else:
-            raise ValueError(f"Unsupported storage type: {Config.STORAGE_TYPE}")
+            raise ValueError(f"Unsupported storage type: {Config.FILE_STORAGE_TYPE}")
 
     @classmethod
     async def save_data(cls, data: list[NamedTuple], output_file_name: Path, column_order: list[str]) -> list[NamedTuple]:
-        return await cls.get_storage_strategy().save_data(data, output_file_name, column_order)
+        return await cls.get_file_storage_strategy().save_data(data, output_file_name, column_order)
 
 
 class ProcessingMixin(ABC):
