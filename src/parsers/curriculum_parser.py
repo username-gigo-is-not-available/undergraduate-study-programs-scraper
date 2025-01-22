@@ -9,13 +9,12 @@ from queue import Queue
 
 from bs4 import Tag, BeautifulSoup
 
+from src.config import Config
 from src.enums import CourseType, ProcessingType
+from src.models import Curriculum, StudyProgram, CourseHeader
 from src.parsers.models.base_parser import Parser
 from src.parsers.models.field_parser import FieldParser
-from src.models import Curriculum, StudyProgram, CourseHeader
 from src.parsers.study_program_parser import StudyProgramParser
-from src.config import Config
-from src.patterns.strategy import ProcessingStrategy
 
 
 class CurriculumParser(Parser):
@@ -109,10 +108,7 @@ class CurriculumParser(Parser):
 
     @classmethod
     async def process_and_save_data(cls, executor: Executor) -> list[Curriculum]:
-
-        processing_strategy: ProcessingStrategy = cls.get_processing_strategy(cls.PROCESSING_STRATEGY)
-
-        data: list[Curriculum] = await processing_strategy.process(
+        data: list[Curriculum] = await cls.get_processing_strategy(cls.PROCESSING_STRATEGY).process(
             parser_function=cls.run_parse_data,
             executor=executor,
             input_event=StudyProgramParser.STUDY_PROGRAMS_DONE_EVENT,
