@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 from bs4 import Tag
 
-from src.decorators import validate_course
+from src.patterns.decorator.validate import validate_course
 from src.models.enums import ProcessingType
 from src.parsers.models.field_parser import FieldParser
 from src.patterns.strategy.data_processing import ProducerProcessingStrategy, ConsumerProcessingStrategy

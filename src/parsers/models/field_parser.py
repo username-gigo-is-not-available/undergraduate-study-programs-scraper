@@ -2,7 +2,8 @@ import logging
 
 from bs4 import Tag
 
-from src.decorators import process_url
+from src.patterns.decorator.resolve import prepend_base_url
+from src.patterns.decorator.validate import validate_url
 
 
 class FieldParser:
@@ -24,7 +25,8 @@ class FieldParser:
             logging.warning(f"Failed to parse {field_type.__name__} from field {self.field_name}")
             return field_type()
 
-    @process_url
+    @validate_url
+    @prepend_base_url
     def parse_url_field(self) -> str:
         return self.element.select_one(self.selector)['href']
 
