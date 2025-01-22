@@ -23,7 +23,6 @@ Before running the scraper, make sure to set the following environment variables
 - `MINIO_BUCKET_NAME`: the name of the bucket where the output files will be saved
 - `OUTPUT_DIRECTORY_PATH`: the path to the directory where the output files will be saved
 - `MAX_WORKERS`: the maximum number of workers that will be used to scrape the website
-- `EXECUTOR_TYPE`: the type of executor that will be used to scrape the website. The possible values are "THREAD" and "PROCESS"
 - `STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME`: the name of the file where the study programs data will be saved
 - `CURRICULUM_DATA_OUTPUT_FILE_NAME`: the name of the file where the curriculum data will be saved
 - `COURSES_DATA_OUTPUT_FILE_NAME`: the name of the file where the courses data will be saved
