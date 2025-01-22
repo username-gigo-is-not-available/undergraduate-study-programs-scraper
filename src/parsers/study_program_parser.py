@@ -7,10 +7,10 @@ from typing import List
 
 from bs4 import Tag, BeautifulSoup
 
-from src.enums import ProcessingType
+from src.models.enums import ProcessingType
 from src.parsers.models.base_parser import Parser
 from src.parsers.models.field_parser import FieldParser
-from src.models import StudyProgram
+from src.models.named_tuples import StudyProgram
 from src.config import Config
 
 

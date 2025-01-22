@@ -2,7 +2,7 @@ from functools import wraps
 from urllib.parse import urlparse, ParseResult
 
 from src.config import Config
-from src.validators import CourseValidator
+from src.patterns.validator.course import CourseValidator
 
 
 def prepend_base_url(func: callable) -> callable:

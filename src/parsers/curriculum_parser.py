@@ -10,8 +10,8 @@ from queue import Queue
 from bs4 import Tag, BeautifulSoup
 
 from src.config import Config
-from src.enums import CourseType, ProcessingType
-from src.models import Curriculum, StudyProgram, CourseHeader
+from src.models.enums import CourseType, ProcessingType
+from src.models.named_tuples import Curriculum, StudyProgram, CourseHeader
 from src.parsers.models.base_parser import Parser
 from src.parsers.models.field_parser import FieldParser
 from src.parsers.study_program_parser import StudyProgramParser
