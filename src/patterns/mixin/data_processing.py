@@ -3,22 +3,11 @@ from typing import NamedTuple
 
 from bs4 import Tag
 
+from src.parsers.field_parser import FieldParser
 from src.patterns.decorator.validate import validate_course
-from src.models.enums import ProcessingType
-from src.parsers.models.field_parser import FieldParser
-from src.patterns.strategy.data_processing import ProducerProcessingStrategy, ConsumerProcessingStrategy
 
 
 class ProcessingMixin:
-
-    @classmethod
-    def get_processing_strategy(cls, processing_strategy: ProcessingType):
-        if processing_strategy == ProcessingType.PRODUCER:
-            return ProducerProcessingStrategy
-        elif processing_strategy == ProcessingType.CONSUMER:
-            return ConsumerProcessingStrategy
-        else:
-            raise ValueError(f"Unsupported processing strategy: {processing_strategy}")
 
     @classmethod
     def get_field_parsers(cls, element: Tag) -> list[FieldParser]:

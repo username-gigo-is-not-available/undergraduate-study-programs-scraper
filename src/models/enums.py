@@ -6,11 +6,6 @@ class UpperStrEnum(StrEnum):
         return name.upper()
 
 
-class ProcessingType(UpperStrEnum):
-    PRODUCER = auto()
-    CONSUMER = auto()
-
-
 class CourseType(UpperStrEnum):
     MANDATORY = auto()
     ELECTIVE = auto()
