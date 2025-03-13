@@ -42,13 +42,12 @@ class CourseParser(Parser):
         course_table: Tag = kwargs.get('element')
 
         fields: dict[str, str] = CourseValidator.validate_course({
-            **course_header._asdict(),
             'course_name_en': cls.extract_text(course_table, cls.COURSE_NAME_EN_SELECTOR),
             'course_professors': cls.extract_text(course_table, cls.COURSE_PROFESSORS_SELECTOR),
             'course_prerequisites': cls.extract_text(course_table, cls.COURSE_PREREQUISITE_SELECTOR),
         })
 
-        course: Course = Course(**fields)
+        course: Course = Course(**{**course_header._asdict(), **fields})
         logging.info(f"Scraped course {course}")
         return course
 

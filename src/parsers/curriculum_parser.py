@@ -44,13 +44,11 @@ class CurriculumParser(Parser):
         course_type: CourseType = kwargs.get('course_type')
 
         fields: dict[str, str | int] = CourseValidator.validate_course({
-            **study_program._asdict(),
             'course_code': cls.extract_text(course_row, cls.COURSE_CODE_SELECTOR),
             'course_name_mk': cls.extract_text(course_row, cls.COURSE_NAME_AND_URL_SELECTOR),
             'course_url': cls.extract_url(course_row, cls.COURSE_NAME_AND_URL_SELECTOR),
             'course_type': course_type,
             'course_semester': int(cls.extract_text(course_row, cls.COURSE_SEMESTER_SELECTOR))
-
         })
         course_header: CourseHeader = CourseHeader(
             course_code=fields.get('course_code'),
@@ -61,7 +59,7 @@ class CurriculumParser(Parser):
         cls.COURSE_HEADERS_QUEUE.put_nowait(course_header)
         cls.COURSE_HEADERS_READY_EVENT.set()
 
-        curriculum: Curriculum = Curriculum(**fields)
+        curriculum: Curriculum = Curriculum(**{**study_program._asdict(),**fields})
         logging.info(f"Scraped curriculum {curriculum}")
 
         return curriculum
