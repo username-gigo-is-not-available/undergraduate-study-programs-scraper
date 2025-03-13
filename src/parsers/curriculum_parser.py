@@ -11,7 +11,7 @@ from bs4 import Tag, BeautifulSoup
 
 from src.config import Config
 from src.models.enums import CourseType
-from src.models.named_tuples import Curriculum, StudyProgram, CourseHeader
+from src.models.named_tuples import CurriculumHeader, StudyProgram, CourseHeader
 from src.parsers.base_parser import Parser
 from src.parsers.study_program_parser import StudyProgramParser
 from src.patterns.validator.course import CourseValidator
@@ -37,7 +37,7 @@ class CurriculumParser(Parser):
     CURRICULA_DATA_OUTPUT_FILE_NAME: Path = Config.CURRICULA_DATA_OUTPUT_FILE_NAME
 
     @classmethod
-    async def parse_row(cls, *args, **kwargs) -> Curriculum:
+    async def parse_row(cls, *args, **kwargs) -> CurriculumHeader:
 
         study_program: StudyProgram = kwargs.get('study_program')
         course_row: Tag = kwargs.get('element')
@@ -59,15 +59,15 @@ class CurriculumParser(Parser):
         cls.COURSE_HEADERS_QUEUE.put_nowait(course_header)
         cls.COURSE_HEADERS_READY_EVENT.set()
 
-        curriculum: Curriculum = Curriculum(**{**study_program._asdict(),**fields})
+        curriculum: CurriculumHeader = CurriculumHeader(**{**study_program._asdict(), **fields})
         logging.info(f"Scraped curriculum {curriculum}")
 
         return curriculum
 
     @classmethod
-    async def parse_data(cls, *args, **kwargs) -> list[Curriculum]:
+    async def parse_data(cls, *args, **kwargs) -> list[CurriculumHeader]:
 
-        async def parse_section(study_program: StudyProgram, course_type: CourseType, section: Tag) -> list[Curriculum]:
+        async def parse_section(study_program: StudyProgram, course_type: CourseType, section: Tag) -> list[CurriculumHeader]:
             def filter_course_rows(row: Tag) -> bool:
                 return bool(row.select_one(cls.COURSE_CODE_SELECTOR) and row.select_one(cls.COURSE_NAME_AND_URL_SELECTOR))
 
@@ -81,7 +81,7 @@ class CurriculumParser(Parser):
             course_rows: list[Tag] = [modify_course_row(row, 'td', cls.extract_text(section, cls.MANDATORY_COURSE_SEMESTER_SELECTOR))
                                       if course_type == CourseType.MANDATORY else row for row in course_rows]
 
-            tasks: list[Task[Curriculum]] = [asyncio.create_task(
+            tasks: list[Task[CurriculumHeader]] = [asyncio.create_task(
                 cls.parse_row(study_program=study_program, element=course_row, course_type=course_type))
                 for course_row in course_rows]
 
@@ -89,7 +89,7 @@ class CurriculumParser(Parser):
 
         study_program: StudyProgram = kwargs.get('item')
         soup: BeautifulSoup = await cls.get_parsed_html(study_program.study_program_url)
-        tasks: list[Task[list[Curriculum]]] = []
+        tasks: list[Task[list[CurriculumHeader]]] = []
 
         for section in soup.select(cls.MANDATORY_COURSE_SECTION_SELECTOR):
             tasks.append(asyncio.create_task(parse_section(study_program, CourseType.MANDATORY, section)))
@@ -99,7 +99,7 @@ class CurriculumParser(Parser):
         return reduce(lambda x, y: x + y, await asyncio.gather(*tasks))  # type: ignore
 
     @classmethod
-    async def process_and_save_data(cls, executor: Executor) -> list[Curriculum]:
+    async def process_and_save_data(cls, executor: Executor) -> list[CurriculumHeader]:
         loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 
         await StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.wait()
@@ -108,11 +108,11 @@ class CurriculumParser(Parser):
             async with cls.async_lock(cls.STUDY_PROGRAMS_LOCK, executor):
                 if StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.is_set() and StudyProgramParser.STUDY_PROGRAMS_QUEUE.empty():
                     cls.CURRICULA_DONE_EVENT.set()
-                    curricula: list[list[Curriculum]] = await asyncio.gather(
+                    curricula: list[list[CurriculumHeader]] = await asyncio.gather(
                         *[cls.CURRICULA_QUEUE.get_nowait() for _ in range(cls.CURRICULA_QUEUE.qsize())])  # type: ignore
-                    curricula: list[Curriculum] = reduce(lambda x, y: x + y, curricula)
+                    curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, curricula)
                     logging.info("Finished processing curricula")
-                    await cls.save_data(curricula, cls.CURRICULA_DATA_OUTPUT_FILE_NAME, list(Curriculum._fields))
+                    await cls.save_data(curricula, cls.CURRICULA_DATA_OUTPUT_FILE_NAME, list(CurriculumHeader._fields))
                     return curricula
 
             while not StudyProgramParser.STUDY_PROGRAMS_QUEUE.empty():

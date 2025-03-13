@@ -9,7 +9,7 @@ from queue import Queue
 from bs4 import Tag, BeautifulSoup
 
 from src.config import Config
-from src.models.named_tuples import Course, CourseHeader
+from src.models.named_tuples import CourseDetails, CourseHeader
 from src.parsers.base_parser import Parser
 from src.parsers.curriculum_parser import CurriculumParser
 from src.patterns.validator.course import CourseValidator
@@ -37,7 +37,7 @@ class CourseParser(Parser):
     COURSES_DATA_OUTPUT_FILE_NAME: Path = Config.COURSES_DATA_OUTPUT_FILE_NAME
 
     @classmethod
-    async def parse_row(cls, *args, **kwargs) -> Course:
+    async def parse_row(cls, *args, **kwargs) -> CourseDetails:
         course_header: CourseHeader = kwargs.get('course_header')
         course_table: Tag = kwargs.get('element')
 
@@ -47,19 +47,19 @@ class CourseParser(Parser):
             'course_prerequisites': cls.extract_text(course_table, cls.COURSE_PREREQUISITE_SELECTOR),
         })
 
-        course: Course = Course(**{**course_header._asdict(), **fields})
+        course: CourseDetails = CourseDetails(**{**course_header._asdict(), **fields})
         logging.info(f"Scraped course {course}")
         return course
 
     @classmethod
-    async def parse_data(cls, *args, **kwargs) -> Course:
+    async def parse_data(cls, *args, **kwargs) -> CourseDetails:
         course_header: CourseHeader = kwargs.get('item')
         soup: BeautifulSoup = await Parser.get_parsed_html(course_header.course_url)
         course_table: Tag = soup.select_one(cls.COURSE_TABLE_CLASS_NAME)
         return await cls.parse_row(course_header=course_header, element=course_table)
 
     @classmethod
-    async def process_and_save_data(cls, executor: Executor) -> list[Course]:
+    async def process_and_save_data(cls, executor: Executor) -> list[CourseDetails]:
 
         loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         await CurriculumParser.COURSE_HEADERS_READY_EVENT.wait()
@@ -69,11 +69,11 @@ class CourseParser(Parser):
             async with cls.async_lock(cls.CURRICULA_LOCK, executor):
                 if CurriculumParser.COURSE_HEADERS_QUEUE.empty() and CurriculumParser.CURRICULA_DONE_EVENT.is_set():
                     cls.COURSES_DONE_EVENT.set()
-                    course_details: list[Course] = await asyncio.gather(
+                    courses: list[CourseDetails] = await asyncio.gather(
                         *[cls.COURSES_QUEUE.get_nowait() for _ in range(cls.COURSES_QUEUE.qsize())])  # type: ignore
                     logging.info("Finished processing courses")
-                    await cls.save_data(course_details, cls.COURSES_DATA_OUTPUT_FILE_NAME, list(Course._fields))
-                    return course_details
+                    await cls.save_data(courses, cls.COURSES_DATA_OUTPUT_FILE_NAME, list(CourseDetails._fields))
+                    return courses
 
             while not CurriculumParser.COURSE_HEADERS_QUEUE.empty():
                 async with cls.async_lock(cls.COURSE_HEADERS_LOCK, executor):
