@@ -49,7 +49,7 @@ class CourseParser(Parser):
         })
 
         course: Course = Course(**fields)
-        logging.info(f"Scraped course details {course}")
+        logging.info(f"Scraped course {course}")
         return course
 
     @classmethod
