@@ -16,11 +16,10 @@ async def main():
     start: float = time.perf_counter()
     tasks = [asyncio.create_task(StudyProgramParser.process_and_save_data())]
     with ThreadPoolExecutor(max_workers=Config.MAX_WORKERS) as executor:
-        tasks.append(asyncio.create_task(CurriculumParser.process_data(executor=executor)))
+        tasks.append(asyncio.create_task(CurriculumParser.process_and_save_data(executor=executor)))
         tasks.append(asyncio.create_task(CourseParser.process_and_save_data(executor=executor)))
-        study_programs, curricula, courses = await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
-    await CurriculumParser.merge_and_save_data(partial_curricula=curricula, courses=courses)
     logging.info(f"Time taken: {time.perf_counter() - start:.2f} seconds")
 
 

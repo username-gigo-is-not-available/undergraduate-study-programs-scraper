@@ -9,17 +9,15 @@ from queue import Queue
 from bs4 import Tag, BeautifulSoup
 
 from src.config import Config
-from src.models.enums import CourseSemesterSeasonType
 from src.models.named_tuples import Course, CourseHeader
 from src.parsers.base_parser import Parser
 from src.parsers.curriculum_parser import CurriculumParser
-from src.parsers.field_parser import FieldParser
+from src.patterns.validator.course import CourseValidator
 
 
 class CourseParser(Parser):
     # https://finki.ukim.mk/subject/{course_code}
 
-    COURSES_DATA_OUTPUT_FILE_NAME: Path = Config.COURSES_DATA_OUTPUT_FILE_NAME
     COURSE_TABLE_CLASS_NAME: str = 'table.table-striped.table.table-bordered.table-sm'
     COURSE_NAME_MK_SELECTOR: str = 'tr:nth-child(1) > td:nth-child(3) > p:nth-child(1) > b'
     COURSE_NAME_EN_SELECTOR: str = 'tr:nth-child(1) > td:nth-child(3) > p:nth-child(2) > span'
@@ -29,40 +27,28 @@ class CourseParser(Parser):
     COURSE_PREREQUISITE_SELECTOR: str = 'tr:nth-child(8) > td:nth-child(3)'
     COURSE_ACADEMIC_YEAR_SELECTOR: str = 'tr:nth-child(6) > td:nth-child(2) > p:nth-child(2) > span:nth-child(1)'
     COURSE_SEMESTER_SEASON_SELECTOR: str = 'tr:nth-child(6) > td:nth-child(2) > p:nth-child(2) > span:nth-child(2)'
+
     COURSES_QUEUE: Queue = Queue()
     COURSES_DONE_EVENT: asyncio.Event = asyncio.Event()
-    LOCK: threading.Lock = threading.Lock()
+    COURSE_HEADERS_LOCK: threading.Lock = threading.Lock()
     PROCESSED_COURSE_HEADERS: set[CourseHeader] = set()
-    LOCK2: threading.Lock = threading.Lock()
+    CURRICULA_LOCK: threading.Lock = threading.Lock()
 
-    @classmethod
-    def get_field_parsers(cls, element: Tag) -> list[FieldParser]:
-        return [
-            FieldParser('course_name_en', CourseParser.COURSE_NAME_EN_SELECTOR, element,
-                        FieldParser.parse_text_field),
-            FieldParser('course_semester_season', CourseParser.COURSE_SEMESTER_SEASON_SELECTOR, element,
-                        FieldParser.parse_text_field),
-            FieldParser('course_academic_year', CourseParser.COURSE_ACADEMIC_YEAR_SELECTOR, element,
-                        partial(FieldParser.parse_text_field, field_type=int)),
-            FieldParser('course_professors', CourseParser.COURSE_PROFESSORS_SELECTOR, element,
-                        FieldParser.parse_text_field),
-            FieldParser('course_prerequisites', CourseParser.COURSE_PREREQUISITE_SELECTOR, element,
-                        FieldParser.parse_text_field),
-        ]
+    COURSES_DATA_OUTPUT_FILE_NAME: Path = Config.COURSES_DATA_OUTPUT_FILE_NAME
 
     @classmethod
     async def parse_row(cls, *args, **kwargs) -> Course:
         course_header: CourseHeader = kwargs.get('course_header')
         course_table: Tag = kwargs.get('element')
-        fields: dict[str, str | int] = cls.parse_fields(element=course_table)
-        course: Course = Course(
-            *course_header,
-            course_name_en=fields.get('course_name_en'),
-            course_semester_season=CourseSemesterSeasonType.from_str(fields.get('course_semester_season')),
-            course_academic_year=fields.get('course_academic_year'),
-            course_professors=fields.get('course_professors'),
-            course_prerequisites=fields.get('course_prerequisites')
-        )
+
+        fields: dict[str, str] = CourseValidator.validate_course({
+            **course_header._asdict(),
+            'course_name_en': cls.extract_text(course_table, cls.COURSE_NAME_EN_SELECTOR),
+            'course_professors': cls.extract_text(course_table, cls.COURSE_PROFESSORS_SELECTOR),
+            'course_prerequisites': cls.extract_text(course_table, cls.COURSE_PREREQUISITE_SELECTOR),
+        })
+
+        course: Course = Course(**fields)
         logging.info(f"Scraped course details {course}")
         return course
 
@@ -81,8 +67,8 @@ class CourseParser(Parser):
 
         while True:
 
-            async with cls.async_lock(cls.LOCK, executor):
-                if CurriculumParser.COURSE_HEADERS_QUEUE.empty() and CurriculumParser.PARTIAL_CURRICULA_DONE_EVENT.is_set():
+            async with cls.async_lock(cls.CURRICULA_LOCK, executor):
+                if CurriculumParser.COURSE_HEADERS_QUEUE.empty() and CurriculumParser.CURRICULA_DONE_EVENT.is_set():
                     cls.COURSES_DONE_EVENT.set()
                     course_details: list[Course] = await asyncio.gather(
                         *[cls.COURSES_QUEUE.get_nowait() for _ in range(cls.COURSES_QUEUE.qsize())])  # type: ignore
@@ -91,7 +77,7 @@ class CourseParser(Parser):
                     return course_details
 
             while not CurriculumParser.COURSE_HEADERS_QUEUE.empty():
-                async with cls.async_lock(cls.LOCK2, executor):
+                async with cls.async_lock(cls.COURSE_HEADERS_LOCK, executor):
                     course_header: CourseHeader = CurriculumParser.COURSE_HEADERS_QUEUE.get_nowait()
                     if course_header not in cls.PROCESSED_COURSE_HEADERS:
                         cls.PROCESSED_COURSE_HEADERS.add(course_header)
