@@ -4,9 +4,9 @@ from io import StringIO, BytesIO
 from pathlib import Path
 from typing import NamedTuple, BinaryIO
 
-from minio import S3Error
+from minio import S3Error, Minio
 
-from src.config import Config
+from src.config import Config, MinioClient
 
 
 class FileStorageStrategy:
@@ -45,7 +45,8 @@ class MinioFileStorage(FileStorageStrategy):
 
             logging.info(f"Saving data to MinIO bucket {Config.MINIO_BUCKET_NAME} as {output_file_name}")
 
-            Config.MINIO_CLIENT.put_object(
+            minio_client: Minio = MinioClient.get_minio_client()
+            minio_client.put_object(
                 bucket_name=Config.MINIO_BUCKET_NAME,
                 object_name=str(output_file_name),
                 data=bytes_buffer,

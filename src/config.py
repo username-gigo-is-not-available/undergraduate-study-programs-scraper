@@ -7,7 +7,6 @@ from minio import Minio
 
 
 class Config:
-
     ENVIRONMENT_VARIABLES: dict[str, str] = {**dotenv_values('../.env'), **os.environ}
 
     BASE_URL: str = "https://finki.ukim.mk"
@@ -27,7 +26,6 @@ class Config:
     MINIO_SECRET_KEY: str = ENVIRONMENT_VARIABLES.get('MINIO_SECRET_KEY')
     MINIO_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_BUCKET_NAME')
     # MINIO_SECURE_CONNECTION: bool = bool(ENVIRONMENT_VARIABLES.get('MINIO_SECURE_CONNECTION'))
-    MINIO_CLIENT = Minio(MINIO_ENDPOINT_URL, access_key=MINIO_ACCESS_KEY, secret_key=MINIO_SECRET_KEY, secure=False)
 
     STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME'))
     CURRICULA_DATA_OUTPUT_FILE_NAME: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_DATA_OUTPUT_FILE_NAME'))
@@ -36,3 +34,10 @@ class Config:
 
     LOCK_TIMEOUT_SECONDS: int = int(ENVIRONMENT_VARIABLES.get('LOCK_TIMEOUT_SECONDS'))
     REQUESTS_TIMEOUT_SECONDS: int = int(ENVIRONMENT_VARIABLES.get('REQUESTS_TIMEOUT_SECONDS'))
+
+
+class MinioClient:
+
+    @classmethod
+    def get_minio_client(cls):
+        return Minio(Config.MINIO_ENDPOINT_URL, access_key=Config.MINIO_ACCESS_KEY, secret_key=Config.MINIO_SECRET_KEY, secure=False)
