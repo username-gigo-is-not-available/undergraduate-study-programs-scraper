@@ -23,7 +23,8 @@ async def main():
         tasks.append(asyncio.create_task(CurriculumParser.process_and_save_data(executor=executor)))
         tasks.append(asyncio.create_task(CourseParser.process_and_save_data(executor=executor)))
         study_programs, curricula, courses = await asyncio.gather(*tasks)  # noqa
-
+    logging.info(f"Study programs: {len(study_programs)}, Curricula: {len(curricula)}, Courses: {len(courses)}")
+    logging.info("Joining curricula and courses data...")
     df: pd.DataFrame = pd.DataFrame(curricula).merge(pd.DataFrame(courses), on=['course_code', 'course_name_mk', 'course_url'], how='inner')
     data: list[CurriculumDetails] = [CurriculumDetails(**row) for row in df.to_dict(orient='records')]
     await FileStorageMixin.save_data(data, Config.MERGED_DATA_OUTPUT_FILE_NAME, list(CurriculumDetails._fields))
