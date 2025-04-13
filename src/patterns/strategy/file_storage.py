@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import logging
 from io import StringIO, BytesIO
@@ -46,14 +47,14 @@ class MinioFileStorage(FileStorageStrategy):
 
             logging.info(f"Saving data to MinIO bucket {Config.MINIO_BUCKET_NAME} as {output_file_name}")
 
-            minio_client: Minio = MinioClient.get_minio_client()
-            minio_client.put_object(
-                bucket_name=Config.MINIO_BUCKET_NAME,
-                object_name=str(output_file_name),
-                data=bytes_buffer,
-                length=data_length,
-                content_type='text/csv'
-            )
+            minio_client: Minio = MinioClient.connect()
+            await asyncio.to_thread(minio_client.put_object,
+                              bucket_name=Config.MINIO_BUCKET_NAME,
+                              object_name=str(output_file_name),
+                              data=bytes_buffer,
+                              length=data_length,
+                              content_type='text/csv',
+                              ) # noqa
             return data
         except S3Error as e:
             logging.error(f"Failed to save data to MinIO bucket {Config.MINIO_BUCKET_NAME}: {e}")

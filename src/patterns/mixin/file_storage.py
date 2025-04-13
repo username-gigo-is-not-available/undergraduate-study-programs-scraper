@@ -16,7 +16,7 @@ class FileStorageMixin:
                 Config.OUTPUT_DIRECTORY_PATH.mkdir(parents=True)
             return LocalFileStorage()
         elif Config.FILE_STORAGE_TYPE == 'MINIO':
-            minio_client: Minio = MinioClient.get_minio_client()
+            minio_client: Minio = MinioClient.connect()
             if not minio_client.bucket_exists(Config.MINIO_BUCKET_NAME):
                 minio_client.make_bucket(Config.MINIO_BUCKET_NAME)
             return MinioFileStorage()
