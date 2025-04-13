@@ -2,7 +2,8 @@ from pathlib import Path
 from typing import NamedTuple
 from miniopy_async import Minio
 
-from src.config import Config, MinioClient
+from src.config import Config
+from src.clients import MinioClient
 from src.patterns.strategy.file_storage import LocalFileStorage, MinioFileStorage
 
 

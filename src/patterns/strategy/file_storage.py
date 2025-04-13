@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import NamedTuple, BinaryIO, TextIO
 
 from miniopy_async import Minio, S3Error
-from src.config import Config, MinioClient
+from src.config import Config
+from src.clients import MinioClient
 
 
 class FileStorageStrategy:
