@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 from dotenv import dotenv_values
-from minio import Minio
+from miniopy_async import Minio
 
 
 class Config:
