@@ -10,7 +10,8 @@ from src.config import Config, MinioClient
 
 
 class FileStorageStrategy:
-    async def save_data(self, data: list[NamedTuple], output_file_name: Path, column_order: list[str]) -> list[NamedTuple]:
+    @classmethod
+    async def save_data(cls, data: list[NamedTuple], output_file_name: Path, column_order: list[str]) -> list[NamedTuple]:
         raise NotImplementedError
 
 
