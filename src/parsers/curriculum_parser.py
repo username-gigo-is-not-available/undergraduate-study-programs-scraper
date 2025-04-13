@@ -77,13 +77,13 @@ class CurriculumParser(Parser):
                 row.append(tag)
                 return row
 
-            course_rows: list[Tag] = list(filter(filter_course_rows, section.select(cls.COURSE_SECTION_ROWS_SELECTOR)))
-            course_rows: list[Tag] = [modify_course_row(row, 'td', cls.extract_text(section, cls.MANDATORY_COURSE_SEMESTER_SELECTOR))
-                                      if course_type == CourseType.MANDATORY else row for row in course_rows]
+            filtered_course_rows: list[Tag] = list(filter(filter_course_rows, section.select(cls.COURSE_SECTION_ROWS_SELECTOR)))
+            augmented_course_rows: list[Tag] = [modify_course_row(row, 'td', cls.extract_text(section, cls.MANDATORY_COURSE_SEMESTER_SELECTOR))
+                                      if course_type == CourseType.MANDATORY else row for row in filtered_course_rows]
 
             tasks: list[Task[CurriculumHeader]] = [asyncio.create_task(
                 cls.parse_row(study_program=study_program, element=course_row, course_type=course_type))
-                for course_row in course_rows]
+                for course_row in augmented_course_rows]
 
             return await asyncio.gather(*tasks)  # type: ignore
 
@@ -108,9 +108,9 @@ class CurriculumParser(Parser):
             async with cls.async_lock(cls.STUDY_PROGRAMS_LOCK, executor):
                 if StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.is_set() and StudyProgramParser.STUDY_PROGRAMS_QUEUE.empty():
                     cls.CURRICULA_DONE_EVENT.set()
-                    curricula: list[list[CurriculumHeader]] = await asyncio.gather(
+                    nested_curricula: list[list[CurriculumHeader]] = await asyncio.gather(
                         *[cls.CURRICULA_QUEUE.get_nowait() for _ in range(cls.CURRICULA_QUEUE.qsize())])  # type: ignore
-                    curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, curricula)
+                    curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, nested_curricula)
                     logging.info("Finished processing curricula")
                     await cls.save_data(curricula, cls.CURRICULA_DATA_OUTPUT_FILE_NAME, list(CurriculumHeader._fields))
                     return curricula
