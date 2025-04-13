@@ -61,7 +61,7 @@ class CourseParser(Parser):
     @classmethod
     async def process_and_save_data(cls, executor: Executor) -> list[CourseDetails]:
 
-        loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+        loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
         await CurriculumParser.COURSE_HEADERS_READY_EVENT.wait()
 
         while True:

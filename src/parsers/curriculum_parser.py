@@ -100,7 +100,7 @@ class CurriculumParser(Parser):
 
     @classmethod
     async def process_and_save_data(cls, executor: Executor) -> list[CurriculumHeader]:
-        loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+        loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
 
         await StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.wait()
 
