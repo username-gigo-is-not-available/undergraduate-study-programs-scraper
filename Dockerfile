@@ -1,12 +1,11 @@
 # Stage 1: Builder
-FROM python:3.12.4-alpine as builder
+FROM python:3.13.3-alpine as builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache gcc musl-dev libc-dev libpq-dev expat-dev openssl-dev
+    apk upgrade
 
 WORKDIR /undergraduate-study-program-scraper
 
@@ -15,21 +14,20 @@ RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.12.4-alpine
+FROM python:3.13.3-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache libpq expat openssl
+    apk upgrade
 
 RUN addgroup -S app_group && adduser -S app_user -G app_group
 
 USER app_user
 WORKDIR /undergraduate-study-program-scraper
 
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY ./src ./src
