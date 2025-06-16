@@ -9,7 +9,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /undergraduate-study-program-scraper
+WORKDIR /undergraduate-study-programs-scraper
 
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
@@ -27,13 +27,13 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 RUN addgroup --system app_group && adduser --system --ingroup app_group app_user
 
 USER app_user
-WORKDIR /undergraduate-study-program-scraper
+WORKDIR /undergraduate-study-programs-scraper
 
 COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY ./src ./src
 
-ENV PYTHONPATH=/undergraduate-study-program-scraper
+ENV PYTHONPATH=/undergraduate-study-programs-scraper
 
 CMD ["python", "src/main.py"]
