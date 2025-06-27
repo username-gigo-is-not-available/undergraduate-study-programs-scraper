@@ -8,7 +8,6 @@ The scraper will save the scraped data in three different files:
 - `study_programs.csv`: contains the details of the study programs
 - `curriculum.csv`: contains the details of the study programs and related courses
 - `courses.csv`: contains the details of the courses
-- `merged_data.csv`: contains the merged data from the study programs, curriculum, and courses
 
 ## Requirements
 
@@ -27,7 +26,6 @@ Before running the scraper, make sure to set the following environment variables
 - `STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME`: the name of the file where the study programs data will be saved
 - `CURRICULUM_DATA_OUTPUT_FILE_NAME`: the name of the file where the curriculum data will be saved
 - `COURSES_DATA_OUTPUT_FILE_NAME`: the name of the file where the courses data will be saved
-- `MERGED_DATA_OUTPUT_FILE_NAME`: the name of the file where the merged data will be saved
 - `LOCK_TIMEOUT_SECONDS`: the timeout for all locks in seconds
 - `REQUEST_TIMEOUT_SECONDS`: the timeout for all HTTP requests in seconds
 
