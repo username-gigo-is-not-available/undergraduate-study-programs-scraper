@@ -1,6 +1,6 @@
 import re
 
-from src.config import Config
+from src.configurations import ApplicationConfiguration
 
 
 class CourseValidator:
@@ -9,7 +9,7 @@ class CourseValidator:
     def validate_course(fields: dict[str, str]) -> dict[str, str | None]:
         course_name = fields.get('course_name_mk') or fields.get('course_name_en')
 
-        if course_name and re.search(Config.COURSE_CODES_REGEX, course_name):
+        if course_name and re.search(ApplicationConfiguration.COURSE_CODES_REGEX, course_name):
             course_name_key = 'course_name_mk' if 'course_name_mk' in fields else 'course_name_en'
             fields.update({
                 'course_code': CourseValidator.extract_course_code(course_name),

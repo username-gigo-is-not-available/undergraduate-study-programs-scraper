@@ -6,7 +6,7 @@ import certifi
 from aiohttp import ClientTimeout
 from bs4 import BeautifulSoup
 
-from src.config import Config
+from src.configurations import StorageConfiguration, ApplicationConfiguration
 
 
 class HTTPClientMixin:
@@ -16,7 +16,7 @@ class HTTPClientMixin:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, ssl=ssl_context, timeout=ClientTimeout(total=Config.REQUESTS_TIMEOUT_SECONDS)) as response:
+                async with session.get(url, ssl=ssl_context, timeout=ClientTimeout(total=ApplicationConfiguration.REQUESTS_TIMEOUT_SECONDS)) as response:
                     logging.info(f"Fetching page {url}")
                     return await response.text()
         except aiohttp.ClientTimeout as e:

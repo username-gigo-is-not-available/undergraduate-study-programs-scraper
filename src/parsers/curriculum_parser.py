@@ -9,7 +9,7 @@ from queue import Queue
 
 from bs4 import Tag, BeautifulSoup
 
-from src.config import Config
+from src.configurations import StorageConfiguration, DatasetConfiguration
 from src.models.enums import CourseType
 from src.models.named_tuples import CurriculumHeader, StudyProgram, CourseHeader
 from src.parsers.base_parser import Parser
@@ -33,8 +33,6 @@ class CurriculumParser(Parser):
     CURRICULA_QUEUE: Queue = Queue()
     CURRICULA_DONE_EVENT: Event = Event()
     STUDY_PROGRAMS_LOCK: threading.Lock = threading.Lock()
-
-    CURRICULA_DATA_OUTPUT_FILE_NAME: Path = Config.CURRICULA_DATA_OUTPUT_FILE_NAME
 
     @classmethod
     async def parse_row(cls, *args, **kwargs) -> CurriculumHeader:
@@ -112,7 +110,7 @@ class CurriculumParser(Parser):
                         *[cls.CURRICULA_QUEUE.get_nowait() for _ in range(cls.CURRICULA_QUEUE.qsize())])  # type: ignore
                     curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, nested_curricula)
                     logging.info("Finished processing curricula")
-                    await cls.save_data(curricula, cls.CURRICULA_DATA_OUTPUT_FILE_NAME, list(CurriculumHeader._fields))
+                    await cls.save_data(curricula, DatasetConfiguration.CURRICULA)
                     return curricula
 
             while not StudyProgramParser.STUDY_PROGRAMS_QUEUE.empty():

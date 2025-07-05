@@ -7,7 +7,7 @@ from typing import List
 from bs4 import Tag, BeautifulSoup
 
 from src.models.named_tuples import StudyProgram
-from src.config import Config
+from src.configurations import StorageConfiguration, DatasetConfiguration
 from src.parsers.base_parser import Parser
 
 
@@ -22,8 +22,6 @@ class StudyProgramParser(Parser):
 
     STUDY_PROGRAMS_QUEUE: Queue = Queue()
     STUDY_PROGRAMS_READY_EVENT: asyncio.Event = asyncio.Event()
-
-    STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME: Path = Config.STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME
 
     @classmethod
     async def parse_row(cls, *args, **kwargs) -> StudyProgram:
@@ -58,5 +56,5 @@ class StudyProgramParser(Parser):
             if not cls.STUDY_PROGRAMS_READY_EVENT.is_set():
                 cls.STUDY_PROGRAMS_READY_EVENT.set()
         logging.info("Finished processing study programs")
-        await cls.save_data(study_programs, cls.STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME, list(StudyProgram._fields))
+        await cls.save_data(study_programs, DatasetConfiguration.STUDY_PROGRAMS)
         return study_programs

@@ -2,7 +2,7 @@ import re
 
 from bs4 import Tag
 
-from src.config import Config
+from src.configurations import ApplicationConfiguration
 from src.patterns.mixin.data_processing import ProcessingMixin
 from src.patterns.mixin.file_storage import FileStorageMixin
 from src.patterns.mixin.http_client import HTTPClientMixin
@@ -17,5 +17,5 @@ class Parser(ProcessingMixin, FileStorageMixin, HTTPClientMixin, ThreadSafetyMix
 
     @classmethod
     def extract_url(cls, tag: Tag, selector: str) -> str:
-        return ''.join([Config.BASE_URL, tag.select_one(selector)['href']])
+        return ''.join([ApplicationConfiguration.BASE_URL, tag.select_one(selector)['href']])
 

@@ -22,3 +22,8 @@ class CourseSemesterSeasonType(UpperStrEnum):
     @classmethod
     def from_str(cls, value: str) -> 'CourseSemesterSeasonType':
         return cls.WINTER if value == 'Зимски' else cls.SUMMER
+
+class DatasetType(UpperStrEnum):
+    STUDY_PROGRAMS = auto()
+    COURSES = auto()
+    CURRICULA = auto()

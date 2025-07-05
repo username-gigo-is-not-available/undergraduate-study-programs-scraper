@@ -8,7 +8,7 @@ from queue import Queue
 
 from bs4 import Tag, BeautifulSoup
 
-from src.config import Config
+from src.configurations import StorageConfiguration, DatasetConfiguration
 from src.models.named_tuples import CourseDetails, CourseHeader
 from src.parsers.base_parser import Parser
 from src.parsers.curriculum_parser import CurriculumParser
@@ -33,8 +33,6 @@ class CourseParser(Parser):
     COURSE_HEADERS_LOCK: threading.Lock = threading.Lock()
     PROCESSED_COURSE_HEADERS: set[CourseHeader] = set()
     CURRICULA_LOCK: threading.Lock = threading.Lock()
-
-    COURSES_DATA_OUTPUT_FILE_NAME: Path = Config.COURSES_DATA_OUTPUT_FILE_NAME
 
     @classmethod
     async def parse_row(cls, *args, **kwargs) -> CourseDetails:
@@ -72,7 +70,7 @@ class CourseParser(Parser):
                     courses: list[CourseDetails] = await asyncio.gather(
                         *[cls.COURSES_QUEUE.get_nowait() for _ in range(cls.COURSES_QUEUE.qsize())])  # type: ignore
                     logging.info("Finished processing courses")
-                    await cls.save_data(courses, cls.COURSES_DATA_OUTPUT_FILE_NAME, list(CourseDetails._fields))
+                    await cls.save_data(courses, DatasetConfiguration.COURSES)
                     return courses
 
             while not CurriculumParser.COURSE_HEADERS_QUEUE.empty():
