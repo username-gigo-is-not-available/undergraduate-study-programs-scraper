@@ -4,7 +4,6 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 from src.models.enums import DatasetType
-from src.models.named_tuples import CourseDetails, CurriculumHeader, StudyProgram
 
 ENVIRONMENT_VARIABLES: dict[str, str] = {**dotenv_values('../.env'), **os.environ}
 
@@ -28,54 +27,59 @@ class StorageConfiguration:
     MINIO_ENDPOINT_URL: str = ENVIRONMENT_VARIABLES.get('MINIO_ENDPOINT_URL')
     MINIO_ACCESS_KEY: str = ENVIRONMENT_VARIABLES.get('MINIO_ACCESS_KEY')
     MINIO_SECRET_KEY: str = ENVIRONMENT_VARIABLES.get('MINIO_SECRET_KEY')
-    MINIO_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_BUCKET_NAME')
+    MINIO_OUTPUT_DATA_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_OUTPUT_DATA_BUCKET_NAME')
+    MINIO_OUTPUT_SCHEMA_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_OUTPUT_SCHEMA_BUCKET_NAME')
     # MINIO_SECURE_CONNECTION: bool = bool(ENVIRONMENT_VARIABLES.get('MINIO_SECURE_CONNECTION'))
 
-    OUTPUT_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('OUTPUT_DIRECTORY_PATH', '..'))
+    OUTPUT_DATA_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('OUTPUT_DATA_DIRECTORY_PATH', '..'))
+    OUTPUT_SCHEMA_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('OUTPUT_SCHEMA_DIRECTORY_PATH', '..'))
 
 
 class DatasetPathConfiguration:
+    STUDY_PROGRAMS_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME'))
+    CURRICULA_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_DATA_OUTPUT_FILE_NAME'))
+    COURSES_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_DATA_OUTPUT_FILE_NAME'))
 
-    STUDY_PROGRAMS_OUTPUT: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME'))
-    CURRICULA_OUTPUT: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_DATA_OUTPUT_FILE_NAME'))
-    COURSES_OUTPUT: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_DATA_OUTPUT_FILE_NAME'))
+    STUDY_PROGRAMS_OUTPUT_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_OUTPUT_SCHEMA_FILE_NAME'))
+    CURRICULA_OUTPUT_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_OUTPUT_SCHEMA_FILE_NAME'))
+    COURSES_OUTPUT_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_OUTPUT_SCHEMA_FILE_NAME'))
 
 
 class DatasetIOConfiguration:
     def __init__(self, file_name: str | Path):
         self.file_name = file_name
 
-
-class DatasetTransformationConfiguration:
-
-    def __init__(self, columns: list[str]):
-        self.columns = columns
-
-
 class DatasetConfiguration:
+    STUDY_PROGRAMS: "DatasetConfiguration"
+    CURRICULA: "DatasetConfiguration"
+    COURSES: "DatasetConfiguration"
 
     def __init__(self,
                  dataset: DatasetType,
                  output_io_config: DatasetIOConfiguration,
-                 output_transformation_config: DatasetTransformationConfiguration,
+                 output_schema_config: DatasetIOConfiguration,
                  ):
         self.dataset_name = dataset
         self.output_io_config = output_io_config
-        self.output_transformation_config = output_transformation_config
+        self.output_schema_config = output_schema_config
 
 
 DatasetConfiguration.STUDY_PROGRAMS = DatasetConfiguration(DatasetType.STUDY_PROGRAMS,
-                                                               DatasetIOConfiguration(DatasetPathConfiguration.STUDY_PROGRAMS_OUTPUT),
-                                                               DatasetTransformationConfiguration(
-                                                                   list(StudyProgram._fields))
-                                                               )
+                                                           DatasetIOConfiguration(
+                                                               DatasetPathConfiguration.STUDY_PROGRAMS_OUTPUT_DATA),
+                                                           DatasetIOConfiguration(
+                                                               DatasetPathConfiguration.STUDY_PROGRAMS_OUTPUT_SCHEMA),
+                                                           )
 DatasetConfiguration.COURSES = DatasetConfiguration(DatasetType.COURSES,
-                                                               DatasetIOConfiguration(DatasetPathConfiguration.COURSES_OUTPUT),
-                                                               DatasetTransformationConfiguration(
-                                                                   list(CourseDetails._fields))
-                                                               )
+                                                    DatasetIOConfiguration(
+                                                        DatasetPathConfiguration.COURSES_OUTPUT_DATA),
+                                                    DatasetIOConfiguration(
+                                                        DatasetPathConfiguration.COURSES_OUTPUT_SCHEMA),
+
+                                                    )
 DatasetConfiguration.CURRICULA = DatasetConfiguration(DatasetType.CURRICULA,
-                                                               DatasetIOConfiguration(DatasetPathConfiguration.CURRICULA_OUTPUT),
-                                                               DatasetTransformationConfiguration(
-                                                                   list(CurriculumHeader._fields))
-                                                               )
+                                                      DatasetIOConfiguration(
+                                                          DatasetPathConfiguration.CURRICULA_OUTPUT_DATA),
+                                                      DatasetIOConfiguration(
+                                                          DatasetPathConfiguration.CURRICULA_OUTPUT_SCHEMA),
+                                                      )

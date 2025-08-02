@@ -27,7 +27,8 @@ class CourseParser(Parser):
     COURSE_PREREQUISITE_SELECTOR: str = 'tr:nth-child(8) > td:nth-child(3)'
     COURSE_ACADEMIC_YEAR_SELECTOR: str = 'tr:nth-child(6) > td:nth-child(2) > p:nth-child(2) > span:nth-child(1)'
     COURSE_SEMESTER_SEASON_SELECTOR: str = 'tr:nth-child(6) > td:nth-child(2) > p:nth-child(2) > span:nth-child(2)'
-
+    COURSE_COMPETENCE_SELECTOR: str =  'tr:nth-child(9) > td:nth-child(2) > p:nth-child(3)'
+    COURSE_CONTENT_SELECTOR: str =  'tr:nth-child(10) > td:nth-child(2) > p:nth-child(3)'
     COURSES_QUEUE: Queue = Queue()
     COURSES_DONE_EVENT: asyncio.Event = asyncio.Event()
     COURSE_HEADERS_LOCK: threading.Lock = threading.Lock()
@@ -43,6 +44,8 @@ class CourseParser(Parser):
             'course_name_en': cls.extract_text(course_table, cls.COURSE_NAME_EN_SELECTOR),
             'course_professors': cls.extract_text(course_table, cls.COURSE_PROFESSORS_SELECTOR),
             'course_prerequisites': cls.extract_text(course_table, cls.COURSE_PREREQUISITE_SELECTOR),
+            'course_competence': cls.extract_text(course_table, cls.COURSE_COMPETENCE_SELECTOR),
+            'course_content': cls.extract_text(course_table, cls.COURSE_CONTENT_SELECTOR),
         })
 
         course: CourseDetails = CourseDetails(**{**course_header._asdict(), **fields})

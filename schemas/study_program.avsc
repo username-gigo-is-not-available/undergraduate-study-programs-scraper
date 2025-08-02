@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "StudyProgram",
+  "namespace": "undergraduate_study_program_scraper",
+  "doc": "Details about an individual undergraduate study program.",
+  "fields": [
+    {
+      "name": "study_program_name",
+      "type": "string",
+      "doc": "The official name of the undergraduate study program."
+    },
+    {
+      "name": "study_program_duration",
+      "type": "int",
+      "doc": "The standard duration of the study program in academic years"
+    },
+    {
+      "name": "study_program_url",
+      "type": "string",
+      "doc": "The unique URL to the official study program description or page."
+    }
+  ]
+}

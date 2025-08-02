@@ -25,5 +25,7 @@ CourseDetails = NamedTuple('CourseDetails', [
     ('course_url', str),
     ('course_name_en', str),
     ('course_professors', str),
-    ('course_prerequisites', str)
+    ('course_prerequisites', str),
+    ('course_competence', str),
+    ('course_content', str)
 ])

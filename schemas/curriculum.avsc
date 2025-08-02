@@ -1,0 +1,53 @@
+{
+  "type": "record",
+  "name": "Curriculum",
+  "namespace": "undergraduate_study_program_scraper",
+  "doc": "A record linking a specific undergraduate study program to one of the courses it offers, containing full details for both.",
+  "fields": [
+    {
+      "name": "study_program_name",
+      "type": "string",
+      "doc": "The official name of the undergraduate study program."
+    },
+    {
+      "name": "study_program_duration",
+      "type": "int",
+      "doc": "The standard duration of the study program in academic years"
+    },
+    {
+      "name": "study_program_url",
+      "type": "string",
+      "doc": "The unique URL to the official study program description or page."
+    },
+    {
+      "name": "course_code",
+      "type": "string",
+      "doc": "The unique identifier code for the course (pattern: ^F23L[1-3][SW]\\d{3})."
+    },
+    {
+      "name": "course_name_mk",
+      "type": "string",
+      "doc": "The official name of the course in Macedonian."
+    },
+    {
+      "name": "course_url",
+      "type": "string",
+      "doc": "The unique URL to the official course description or page."
+    },
+    {
+      "name": "course_semester",
+      "type": "int",
+      "doc": "The semester the course is offered in"
+    },
+    {
+      "name": "course_type",
+      "type": {
+        "type": "enum",
+        "name": "CourseType",
+        "symbols": ["MANDATORY", "ELECTIVE"],
+        "doc": "The type of the course: MANDATORY or ELECTIVE."
+      },
+      "doc": "The type of the course."
+    }
+  ]
+}
