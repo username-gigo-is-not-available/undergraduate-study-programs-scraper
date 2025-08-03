@@ -41,7 +41,7 @@ class LocalStorage(StorageStrategy):
 
     @classmethod
     async def load_schema(cls, schema_file_name: Path) -> str | list | dict | None:
-        path: Path = StorageConfiguration.OUTPUT_SCHEMA_DIRECTORY_PATH / schema_file_name
+        path: Path = StorageConfiguration.SCHEMA_DIRECTORY_PATH / schema_file_name
         try:
             with open(path, "r", encoding="utf-8") as f:
                 raw: dict = json.load(f)
@@ -77,7 +77,7 @@ class MinioStorage(StorageStrategy):
             async with aiohttp.ClientSession() as session:
                 minio: Minio = MinioClient.connect()
                 response: ClientResponse = await minio.get_object(
-                    bucket_name=StorageConfiguration.MINIO_OUTPUT_SCHEMA_BUCKET_NAME,
+                    bucket_name=StorageConfiguration.MINIO_SCHEMA_BUCKET_NAME,
                     object_name=object_name,
                     session=session,
                 )
@@ -86,7 +86,7 @@ class MinioStorage(StorageStrategy):
             return json.load(buffer)
         except S3Error as e:
             logging.error(
-                f"Failed to read schema from MinIO bucket {StorageConfiguration.MINIO_OUTPUT_SCHEMA_BUCKET_NAME}/{schema_file_name}: {e}")
+                f"Failed to read schema from MinIO bucket {StorageConfiguration.MINIO_SCHEMA_BUCKET_NAME}/{schema_file_name}: {e}")
             return {}
 
     @classmethod

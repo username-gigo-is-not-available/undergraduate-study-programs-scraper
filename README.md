@@ -29,14 +29,14 @@ Before running the scraper, make sure to set the following environment variables
 - `CURRICULUM_DATA_OUTPUT_FILE_NAME`: the name of the file where the curriculum data will be saved
 - `COURSES_DATA_OUTPUT_FILE_NAME`: the name of the file where the courses data will be saved
 
-- `STUDY_PROGRAMS_OUTPUT_SCHEMA_FILE_NAME`: the name of the file where the avro schema for the `StudyProgram` record is stored
-- `CURRICULA_OUTPUT_SCHEMA_FILE_NAME`: the name of the file where the avro schema for the `Curriculum` record is stored
-- `COURSES_OUTPUT_SCHEMA_FILE_NAME`: the name of the file where the avro schema for the `Course` record is stored
+- `STUDY_PROGRAMS_SCHEMA_FILE_NAME`: the name of the file where the avro schema for the `StudyProgram` record is stored
+- `CURRICULA_SCHEMA_FILE_NAME`: the name of the file where the avro schema for the `Curriculum` record is stored
+- `COURSES_SCHEMA_FILE_NAME`: the name of the file where the avro schema for the `Course` record is stored
 
 #### If running the application with local storage:
 
 - `OUTPUT_DATA_DIRECTORY_PATH`: the path to the directory where the output data files will be saved
-- `OUTPUT_SCHEMA_DIRECTORY_PATH`: the path to the directory where the output schema files are stored
+- `SCHEMA_DIRECTORY_PATH`: the path to the directory where the output schema files are stored
 
 #### If running the application with MinIO:
 
@@ -44,7 +44,7 @@ Before running the scraper, make sure to set the following environment variables
 - `MINIO_ACCESS_KEY`: the access key of the MinIO server
 - `MINIO_SECRET_KEY`: the secret key of the MinIO server
 - `MINIO_OUTPUT_DATA_BUCKET_NAME`: the name of the bucket where the output data files will be saved
-- `MINIO_OUTPUT_SCHEMA_BUCKET_NAME`: the name of the bucket where the output schema files are stored
+- `MINIO_SCHEMA_BUCKET_NAME`: the name of the bucket where the schema files are stored
 
 ## Installation
 

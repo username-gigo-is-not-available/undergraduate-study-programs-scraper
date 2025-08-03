@@ -28,11 +28,11 @@ class StorageConfiguration:
     MINIO_ACCESS_KEY: str = ENVIRONMENT_VARIABLES.get('MINIO_ACCESS_KEY')
     MINIO_SECRET_KEY: str = ENVIRONMENT_VARIABLES.get('MINIO_SECRET_KEY')
     MINIO_OUTPUT_DATA_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_OUTPUT_DATA_BUCKET_NAME')
-    MINIO_OUTPUT_SCHEMA_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_OUTPUT_SCHEMA_BUCKET_NAME')
+    MINIO_SCHEMA_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_SCHEMA_BUCKET_NAME')
     # MINIO_SECURE_CONNECTION: bool = bool(ENVIRONMENT_VARIABLES.get('MINIO_SECURE_CONNECTION'))
 
     OUTPUT_DATA_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('OUTPUT_DATA_DIRECTORY_PATH', '..'))
-    OUTPUT_SCHEMA_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('OUTPUT_SCHEMA_DIRECTORY_PATH', '..'))
+    SCHEMA_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('SCHEMA_DIRECTORY_PATH', '..'))
 
 
 class DatasetPathConfiguration:
@@ -40,9 +40,9 @@ class DatasetPathConfiguration:
     CURRICULA_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_DATA_OUTPUT_FILE_NAME'))
     COURSES_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_DATA_OUTPUT_FILE_NAME'))
 
-    STUDY_PROGRAMS_OUTPUT_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_OUTPUT_SCHEMA_FILE_NAME'))
-    CURRICULA_OUTPUT_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_OUTPUT_SCHEMA_FILE_NAME'))
-    COURSES_OUTPUT_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_OUTPUT_SCHEMA_FILE_NAME'))
+    STUDY_PROGRAMS_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_SCHEMA_FILE_NAME'))
+    CURRICULA_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_SCHEMA_FILE_NAME'))
+    COURSES_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_SCHEMA_FILE_NAME'))
 
 
 class DatasetIOConfiguration:
@@ -68,18 +68,18 @@ DatasetConfiguration.STUDY_PROGRAMS = DatasetConfiguration(DatasetType.STUDY_PRO
                                                            DatasetIOConfiguration(
                                                                DatasetPathConfiguration.STUDY_PROGRAMS_OUTPUT_DATA),
                                                            DatasetIOConfiguration(
-                                                               DatasetPathConfiguration.STUDY_PROGRAMS_OUTPUT_SCHEMA),
+                                                               DatasetPathConfiguration.STUDY_PROGRAMS_SCHEMA),
                                                            )
 DatasetConfiguration.COURSES = DatasetConfiguration(DatasetType.COURSES,
                                                     DatasetIOConfiguration(
                                                         DatasetPathConfiguration.COURSES_OUTPUT_DATA),
                                                     DatasetIOConfiguration(
-                                                        DatasetPathConfiguration.COURSES_OUTPUT_SCHEMA),
+                                                        DatasetPathConfiguration.COURSES_SCHEMA),
 
                                                     )
 DatasetConfiguration.CURRICULA = DatasetConfiguration(DatasetType.CURRICULA,
                                                       DatasetIOConfiguration(
                                                           DatasetPathConfiguration.CURRICULA_OUTPUT_DATA),
                                                       DatasetIOConfiguration(
-                                                          DatasetPathConfiguration.CURRICULA_OUTPUT_SCHEMA),
+                                                          DatasetPathConfiguration.CURRICULA_SCHEMA),
                                                       )
