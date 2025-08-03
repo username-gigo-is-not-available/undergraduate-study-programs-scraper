@@ -12,7 +12,7 @@
     {
       "name": "study_program_duration",
       "type": "int",
-      "doc": "The standard duration of the study program in academic years"
+      "doc": "The standard duration of the study program in academic years (range: [2, 4])"
     },
     {
       "name": "study_program_url",
@@ -37,7 +37,7 @@
     {
       "name": "course_semester",
       "type": "int",
-      "doc": "The semester the course is offered in"
+      "doc": "The semester the course is offered in (range: [1, 8], depending on the study program duration)"
     },
     {
       "name": "course_type",

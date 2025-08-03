@@ -12,7 +12,7 @@
     {
       "name": "study_program_duration",
       "type": "int",
-      "doc": "The standard duration of the study program in academic years"
+      "doc": "The standard duration of the study program in academic years (e.g. 2, 3, 4)"
     },
     {
       "name": "study_program_url",
