@@ -4,7 +4,7 @@ from bs4 import Tag
 
 from src.configurations import ApplicationConfiguration
 from src.patterns.mixin.data_processing import ProcessingMixin
-from src.patterns.mixin.file_storage import StorageMixin
+from src.patterns.mixin.storage import StorageMixin
 from src.patterns.mixin.http_client import HTTPClientMixin
 from src.patterns.mixin.thread_safety import ThreadSafetyMixin
 
