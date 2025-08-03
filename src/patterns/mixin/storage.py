@@ -4,7 +4,7 @@ from miniopy_async import Minio
 
 from src.configurations import StorageConfiguration, DatasetConfiguration
 from src.clients import MinioClient
-from src.patterns.strategy.file_storage import LocalStorage, MinioStorage
+from src.patterns.strategy.storage import LocalStorage, MinioStorage
 
 
 class StorageMixin:

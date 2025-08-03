@@ -12,7 +12,7 @@ from src.configurations import StorageConfiguration, DatasetConfiguration
 from src.models.named_tuples import CourseDetails, CourseHeader
 from src.parsers.base_parser import Parser
 from src.parsers.curriculum_parser import CurriculumParser
-from src.patterns.validator.course import CourseValidator
+from src.patterns.validator.schema import CourseValidator
 
 
 class CourseParser(Parser):

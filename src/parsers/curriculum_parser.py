@@ -14,7 +14,7 @@ from src.models.enums import CourseType
 from src.models.named_tuples import CurriculumHeader, StudyProgram, CourseHeader
 from src.parsers.base_parser import Parser
 from src.parsers.study_program_parser import StudyProgramParser
-from src.patterns.validator.course import CourseValidator
+from src.patterns.validator.schema import CourseValidator
 
 
 class CurriculumParser(Parser):

@@ -13,6 +13,7 @@ from miniopy_async import Minio, S3Error
 
 from src.clients import MinioClient
 from src.configurations import StorageConfiguration
+from src.patterns.validator.schema import SchemaValidator
 
 
 class StorageStrategy:
@@ -24,10 +25,6 @@ class StorageStrategy:
     @classmethod
     async def load_schema(cls, schema_path: Path) -> dict:
         raise NotImplementedError
-
-    @classmethod
-    async def validate_records(cls, records: list[NamedTuple], schema: dict) -> bool:
-        return all(validate(record._asdict(), schema) for record in records)
 
     @classmethod
     async def serialize(cls, data: list[NamedTuple], schema: dict) -> BytesIO:
@@ -55,7 +52,7 @@ class LocalStorage(StorageStrategy):
         path = StorageConfiguration.OUTPUT_DATA_DIRECTORY_PATH / output_file_name
         try:
             schema: dict =  await cls.load_schema(schema_file_name)
-            records_are_valid: bool = await cls.validate_records(data, schema)
+            records_are_valid: bool = await SchemaValidator.validate_records(data, schema)
             if not records_are_valid:
                 logging.error(f"Validation failed for file {output_file_name} and schema {schema_file_name}")
                 return []
@@ -93,7 +90,7 @@ class MinioStorage(StorageStrategy):
     async def save_data(cls, data: list[NamedTuple], output_file_name: Path, schema_file_name: Path) -> list[NamedTuple]:
         try:
             schema: dict = await cls.load_schema(schema_file_name)
-            records_are_valid: bool = await cls.validate_records(data, schema)
+            records_are_valid: bool = await SchemaValidator.validate_records(data, schema)
             if not records_are_valid:
                 logging.error(f"Validation failed for file {output_file_name} and schema {schema_file_name}")
                 return []

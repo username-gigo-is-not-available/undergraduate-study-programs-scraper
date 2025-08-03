@@ -1,6 +1,15 @@
 import re
+from typing import NamedTuple
+
+from fastavro import validate
 
 from src.configurations import ApplicationConfiguration
+
+class SchemaValidator:
+
+    @classmethod
+    async def validate_records(cls, records: list[NamedTuple], schema: dict) -> bool:
+        return all(validate(record._asdict(), schema) for record in records)
 
 
 class CourseValidator:
