@@ -83,7 +83,7 @@ class MinioStorage(StorageStrategy):
                 )
                 data: bytes = await response.read()
                 buffer: BytesIO = BytesIO(data)
-            return json.load(buffer)
+            return parse_schema(json.load(buffer))
         except S3Error as e:
             logging.error(
                 f"Failed to read schema from MinIO bucket {StorageConfiguration.MINIO_SCHEMA_BUCKET_NAME}/{schema_file_name}: {e}")
