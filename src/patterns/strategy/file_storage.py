@@ -47,7 +47,7 @@ class LocalStorage(StorageStrategy):
                 raw: dict = json.load(f)
                 return parse_schema(raw)
         except OSError as e:
-            logging.error(f"Failed to read schema from local storage: {StorageConfiguration.OUTPUT_SCHEMA_DIRECTORY_PATH} {e}")
+            logging.error(f"Failed to read schema from local storage: {path} {e}")
             return {}
 
     @classmethod
@@ -59,7 +59,6 @@ class LocalStorage(StorageStrategy):
             if not records_are_valid:
                 logging.error(f"Validation failed for file {output_file_name} and schema {schema_file_name}")
                 return []
-
             buffer: BytesIO = await cls.serialize(data, schema)
             with open(path, "wb") as f:
                 f.write(buffer.read())
@@ -73,10 +72,10 @@ class MinioStorage(StorageStrategy):
 
     @classmethod
     async def load_schema(cls, schema_file_name: Path)-> dict:
+        object_name: str = "/".join([StorageConfiguration.MINIO_OUTPUT_DATA_BUCKET_NAME, str(schema_file_name)])
         try:
             async with aiohttp.ClientSession() as session:
                 minio: Minio = MinioClient.connect()
-                object_name: str = "/".join([StorageConfiguration.MINIO_OUTPUT_DATA_BUCKET_NAME, str(schema_file_name)])
                 response: ClientResponse = await minio.get_object(
                     bucket_name=StorageConfiguration.MINIO_OUTPUT_SCHEMA_BUCKET_NAME,
                     object_name=object_name,
@@ -87,7 +86,7 @@ class MinioStorage(StorageStrategy):
             return json.load(buffer)
         except S3Error as e:
             logging.error(
-                f"Failed to read schema from MinIO bucket {StorageConfiguration.MINIO_OUTPUT_SCHEMA_BUCKET_NAME}: {e}")
+                f"Failed to read schema from MinIO bucket {StorageConfiguration.MINIO_OUTPUT_SCHEMA_BUCKET_NAME}/{schema_file_name}: {e}")
             return {}
 
     @classmethod
@@ -103,13 +102,13 @@ class MinioStorage(StorageStrategy):
             data_length = buffer.getbuffer().nbytes
 
             logging.info(f"Saving data to MinIO bucket {StorageConfiguration.MINIO_OUTPUT_DATA_BUCKET_NAME} as {output_file_name}")
-            minio_client: Minio = MinioClient.connect()
-            await minio_client.put_object(
+            minio: Minio = MinioClient.connect()
+            await minio.put_object(
                 bucket_name=StorageConfiguration.MINIO_OUTPUT_DATA_BUCKET_NAME,
                 object_name=str(output_file_name),
                 data=buffer,
                 length=data_length,
-                content_type='application/avro'
+                        content_type='application/avro'
             )
             return data
         except S3Error as e:
