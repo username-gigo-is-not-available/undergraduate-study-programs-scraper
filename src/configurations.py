@@ -56,12 +56,12 @@ class DatasetConfiguration:
 
     def __init__(self,
                  dataset: DatasetType,
-                 output_io_config: DatasetIOConfiguration,
-                 output_schema_config: DatasetIOConfiguration,
+                 output_io_configuration: DatasetIOConfiguration,
+                 schema_configuration: DatasetIOConfiguration,
                  ):
         self.dataset_name = dataset
-        self.output_io_config = output_io_config
-        self.output_schema_config = output_schema_config
+        self.output_io_configuration = output_io_configuration
+        self.schema_configuration = schema_configuration
 
 
 DatasetConfiguration.STUDY_PROGRAMS = DatasetConfiguration(DatasetType.STUDY_PROGRAMS,

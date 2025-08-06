@@ -13,10 +13,10 @@ logging.basicConfig(level=logging.INFO)
 async def main():
     logging.info("Starting...")
     start: float = time.perf_counter()
-    tasks: list[asyncio.Task] = [asyncio.create_task(StudyProgramParser.process_and_save_data())]
+    tasks: list[asyncio.Task] = [asyncio.create_task(StudyProgramParser.run())]
     with ThreadPoolExecutor(max_workers=ApplicationConfiguration.MAX_WORKERS) as executor:
-        tasks.append(asyncio.create_task(CurriculumParser.process_and_save_data(executor=executor)))
-        tasks.append(asyncio.create_task(CourseParser.process_and_save_data(executor=executor)))
+        tasks.append(asyncio.create_task(CurriculumParser.run(executor=executor)))
+        tasks.append(asyncio.create_task(CourseParser.run(executor=executor)))
         study_programs, curricula, courses = await asyncio.gather(*tasks)  # noqa
     logging.info(f"Study programs: {len(study_programs)}, Curricula: {len(curricula)}, Courses: {len(courses)}")
     logging.info(f"Time taken: {time.perf_counter() - start:.2f} seconds")

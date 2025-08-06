@@ -14,7 +14,7 @@ from src.models.enums import CourseType
 from src.models.named_tuples import CurriculumHeader, StudyProgram, CourseHeader
 from src.parsers.base_parser import Parser
 from src.parsers.study_program_parser import StudyProgramParser
-from src.patterns.validator.schema import CourseValidator
+from src.patterns.strategy.corrector import CourseCorrectorStrategy
 
 
 class CurriculumParser(Parser):
@@ -41,7 +41,7 @@ class CurriculumParser(Parser):
         course_row: Tag = kwargs.get('element')
         course_type: CourseType = kwargs.get('course_type')
 
-        fields: dict[str, str | int] = CourseValidator.validate_course({
+        fields: dict[str, str | int] = CourseCorrectorStrategy.correct({
             'course_code': cls.extract_text(course_row, cls.COURSE_CODE_SELECTOR),
             'course_name_mk': cls.extract_text(course_row, cls.COURSE_NAME_AND_URL_SELECTOR),
             'course_url': cls.extract_url(course_row, cls.COURSE_NAME_AND_URL_SELECTOR),
@@ -97,7 +97,7 @@ class CurriculumParser(Parser):
         return reduce(lambda x, y: x + y, await asyncio.gather(*tasks))  # type: ignore
 
     @classmethod
-    async def process_and_save_data(cls, executor: Executor) -> list[CurriculumHeader]:
+    async def run(cls, executor: Executor) -> list[CurriculumHeader]:
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
 
         await StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.wait()
@@ -110,6 +110,7 @@ class CurriculumParser(Parser):
                         *[cls.CURRICULA_QUEUE.get_nowait() for _ in range(cls.CURRICULA_QUEUE.qsize())])  # type: ignore
                     curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, nested_curricula)
                     logging.info("Finished processing curricula")
+                    await cls.validate(curricula, await cls.load_schema(DatasetConfiguration.CURRICULA))
                     await cls.save_data(curricula, DatasetConfiguration.CURRICULA)
                     return curricula
 

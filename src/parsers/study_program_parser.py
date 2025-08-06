@@ -48,7 +48,7 @@ class StudyProgramParser(Parser):
         return list(filter(is_macedonian_study_program, study_programs))
 
     @classmethod
-    async def process_and_save_data(cls) -> list[StudyProgram]:
+    async def run(cls) -> list[StudyProgram]:
         soup: BeautifulSoup = await Parser.get_parsed_html(cls.STUDY_PROGRAMS_URL)
         study_programs: List[StudyProgram] = await cls.parse_data(soup=soup)
         for study_program in study_programs:
@@ -56,5 +56,6 @@ class StudyProgramParser(Parser):
             if not cls.STUDY_PROGRAMS_READY_EVENT.is_set():
                 cls.STUDY_PROGRAMS_READY_EVENT.set()
         logging.info("Finished processing study programs")
+        await cls.validate(study_programs, await cls.load_schema(DatasetConfiguration.STUDY_PROGRAMS))
         await cls.save_data(study_programs, DatasetConfiguration.STUDY_PROGRAMS)
         return study_programs

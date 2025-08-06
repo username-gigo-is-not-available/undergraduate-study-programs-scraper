@@ -1,28 +1,27 @@
 import re
-from typing import NamedTuple
-
-from fastavro import validate
+from typing import Any
 
 from src.configurations import ApplicationConfiguration
 
-class SchemaValidator:
+
+class CorrectorStrategy:
 
     @classmethod
-    async def validate_records(cls, records: list[NamedTuple], schema: dict) -> bool:
-        return all(validate(record._asdict(), schema) for record in records)
+    def correct(cls, fields: dict[str, Any]) -> dict[str, Any]:
+        raise NotImplementedError()
 
 
-class CourseValidator:
+class CourseCorrectorStrategy:
 
     @staticmethod
-    def validate_course(fields: dict[str, str]) -> dict[str, str | None]:
+    def correct(fields: dict[str, str]) -> dict[str, str | None]:
         course_name = fields.get('course_name_mk') or fields.get('course_name_en')
 
         if course_name and re.search(ApplicationConfiguration.COURSE_CODES_REGEX, course_name):
             course_name_key = 'course_name_mk' if 'course_name_mk' in fields else 'course_name_en'
             fields.update({
-                'course_code': CourseValidator.extract_course_code(course_name),
-                course_name_key: CourseValidator.extract_course_name(course_name)
+                'course_code': CourseCorrectorStrategy.extract_course_code(course_name),
+                course_name_key: CourseCorrectorStrategy.extract_course_name(course_name)
             })
 
         return fields

@@ -4,6 +4,7 @@ from miniopy_async import Minio
 
 from src.configurations import StorageConfiguration, DatasetConfiguration
 from src.clients import MinioClient
+from src.patterns.mixin.validation import SchemaValidationMixin
 from src.patterns.strategy.storage import LocalStorage, MinioStorage
 
 
@@ -27,4 +28,5 @@ class StorageMixin:
     @classmethod
     async def save_data(cls, data: list[NamedTuple], configuration: DatasetConfiguration) -> list[NamedTuple]:
         storage_strategy: type[LocalStorage | MinioStorage] = await cls.get_storage_strategy()
-        return await storage_strategy.save_data(data, configuration.output_io_config.file_name, configuration.output_schema_config.file_name)
+        schema: dict = await SchemaValidationMixin.get_schema_validation_strategy().load_schema(configuration.schema_configuration.file_name)
+        return await storage_strategy.save_data(data, configuration.output_io_configuration.file_name,schema)

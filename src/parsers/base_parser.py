@@ -7,9 +7,10 @@ from src.patterns.mixin.data_processing import ProcessingMixin
 from src.patterns.mixin.storage import StorageMixin
 from src.patterns.mixin.http_client import HTTPClientMixin
 from src.patterns.mixin.thread_safety import ThreadSafetyMixin
+from src.patterns.mixin.validation import SchemaValidationMixin
 
 
-class Parser(ProcessingMixin, StorageMixin, HTTPClientMixin, ThreadSafetyMixin):
+class Parser(ProcessingMixin, StorageMixin, HTTPClientMixin, ThreadSafetyMixin, SchemaValidationMixin):
 
     @classmethod
     def extract_text(cls, tag: Tag, selector: str) -> str:
