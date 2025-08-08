@@ -85,8 +85,7 @@ class MinioStorage(StorageStrategy):
         try:
             buffer: BytesIO = await cls.serialize(data, schema)
             data_length = buffer.getbuffer().nbytes
-
-            logging.info(f"Saving data to MinIO bucket {StorageConfiguration.MINIO_OUTPUT_DATA_BUCKET_NAME} as {output_file_name}")
+            logging.info(f"Saving data to MinIO bucket {StorageConfiguration.MINIO_OUTPUT_DATA_BUCKET_NAME}/{output_file_name}")
             minio: Minio = MinioClient.connect()
             await minio.put_object(
                 bucket_name=StorageConfiguration.MINIO_OUTPUT_DATA_BUCKET_NAME,
