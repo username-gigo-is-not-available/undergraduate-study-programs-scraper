@@ -35,7 +35,7 @@ class StorageConfiguration:
     SCHEMA_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('SCHEMA_DIRECTORY_PATH', '..'))
 
 
-class DatasetPathConfiguration:
+class PathConfiguration:
     STUDY_PROGRAMS_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME'))
     CURRICULA_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_DATA_OUTPUT_FILE_NAME'))
     COURSES_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_DATA_OUTPUT_FILE_NAME'))
@@ -66,20 +66,20 @@ class DatasetConfiguration:
 
 DatasetConfiguration.STUDY_PROGRAMS = DatasetConfiguration(DatasetType.STUDY_PROGRAMS,
                                                            DatasetIOConfiguration(
-                                                               DatasetPathConfiguration.STUDY_PROGRAMS_OUTPUT_DATA),
+                                                               PathConfiguration.STUDY_PROGRAMS_OUTPUT_DATA),
                                                            DatasetIOConfiguration(
-                                                               DatasetPathConfiguration.STUDY_PROGRAMS_SCHEMA),
+                                                               PathConfiguration.STUDY_PROGRAMS_SCHEMA),
                                                            )
 DatasetConfiguration.COURSES = DatasetConfiguration(DatasetType.COURSES,
                                                     DatasetIOConfiguration(
-                                                        DatasetPathConfiguration.COURSES_OUTPUT_DATA),
+                                                        PathConfiguration.COURSES_OUTPUT_DATA),
                                                     DatasetIOConfiguration(
-                                                        DatasetPathConfiguration.COURSES_SCHEMA),
+                                                        PathConfiguration.COURSES_SCHEMA),
 
                                                     )
 DatasetConfiguration.CURRICULA = DatasetConfiguration(DatasetType.CURRICULA,
                                                       DatasetIOConfiguration(
-                                                          DatasetPathConfiguration.CURRICULA_OUTPUT_DATA),
+                                                          PathConfiguration.CURRICULA_OUTPUT_DATA),
                                                       DatasetIOConfiguration(
-                                                          DatasetPathConfiguration.CURRICULA_SCHEMA),
+                                                          PathConfiguration.CURRICULA_SCHEMA),
                                                       )
