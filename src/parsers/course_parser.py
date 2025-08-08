@@ -3,12 +3,11 @@ import logging
 import threading
 from concurrent.futures import Executor
 from functools import partial
-from pathlib import Path
 from queue import Queue
 
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import StorageConfiguration, DatasetConfiguration
+from src.configurations import DatasetConfiguration
 from src.models.named_tuples import CourseDetails, CourseHeader
 from src.parsers.base_parser import Parser
 from src.parsers.curriculum_parser import CurriculumParser

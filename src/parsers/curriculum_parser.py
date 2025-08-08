@@ -4,12 +4,11 @@ import threading
 from asyncio import Event, Task
 from concurrent.futures import Executor
 from functools import partial, reduce
-from pathlib import Path
 from queue import Queue
 
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import StorageConfiguration, DatasetConfiguration
+from src.configurations import DatasetConfiguration
 from src.models.enums import CourseType
 from src.models.named_tuples import CurriculumHeader, StudyProgram, CourseHeader
 from src.parsers.base_parser import Parser

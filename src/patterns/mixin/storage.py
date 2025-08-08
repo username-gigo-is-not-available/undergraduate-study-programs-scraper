@@ -26,7 +26,13 @@ class StorageMixin:
             raise ValueError(f"Unsupported storage type: {StorageConfiguration.FILE_STORAGE_TYPE}")
 
     @classmethod
+    async def load_schema(cls, configuration: DatasetConfiguration) -> dict:
+        storage_strategy: type[LocalStorage | MinioStorage] = await cls.get_storage_strategy()
+        return await storage_strategy.load_schema(configuration.schema_configuration.file_name)
+
+
+    @classmethod
     async def save_data(cls, data: list[NamedTuple], configuration: DatasetConfiguration) -> list[NamedTuple]:
         storage_strategy: type[LocalStorage | MinioStorage] = await cls.get_storage_strategy()
-        schema: dict = await SchemaValidationMixin.get_schema_validation_strategy().load_schema(configuration.schema_configuration.file_name)
+        schema: dict = await cls.load_schema(configuration)
         return await storage_strategy.save_data(data, configuration.output_io_configuration.file_name,schema)

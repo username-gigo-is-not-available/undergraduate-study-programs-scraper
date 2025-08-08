@@ -1,13 +1,12 @@
 import asyncio
 import logging
-from pathlib import Path
 from queue import Queue
 from typing import List
 
 from bs4 import Tag, BeautifulSoup
 
+from src.configurations import DatasetConfiguration
 from src.models.named_tuples import StudyProgram
-from src.configurations import StorageConfiguration, DatasetConfiguration
 from src.parsers.base_parser import Parser
 
 
