@@ -1,10 +1,14 @@
 import asyncio
 import logging
 import threading
+from asyncio import Task
 from concurrent.futures import Executor
 from functools import partial
 from queue import Queue
+from ssl import SSLContext
 
+import aiohttp
+from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import DatasetConfiguration
@@ -29,56 +33,61 @@ class CourseParser(Parser):
     COURSE_COMPETENCE_SELECTOR: str =  'tr:nth-child(9) > td:nth-child(2) > p:nth-child(3)'
     COURSE_CONTENT_SELECTOR: str =  'tr:nth-child(10) > td:nth-child(2) > p:nth-child(3)'
     COURSES_QUEUE: Queue = Queue()
-    COURSES_DONE_EVENT: asyncio.Event = asyncio.Event()
-    COURSE_HEADERS_LOCK: threading.Lock = threading.Lock()
+    COURSES_DONE_EVENT: threading.Event = threading.Event()
     PROCESSED_COURSE_HEADERS: set[CourseHeader] = set()
-    CURRICULA_LOCK: threading.Lock = threading.Lock()
 
-    @classmethod
-    async def parse_row(cls, *args, **kwargs) -> CourseDetails:
+    def parse_row(self, *args, **kwargs) -> CourseDetails:
         course_header: CourseHeader = kwargs.get('course_header')
         course_table: Tag = kwargs.get('element')
 
         fields: dict[str, str] = CourseCorrectorStrategy.correct({
-            'course_name_en': cls.extract_text(course_table, cls.COURSE_NAME_EN_SELECTOR),
-            'course_professors': cls.extract_text(course_table, cls.COURSE_PROFESSORS_SELECTOR),
-            'course_prerequisites': cls.extract_text(course_table, cls.COURSE_PREREQUISITE_SELECTOR),
-            'course_competence': cls.extract_text(course_table, cls.COURSE_COMPETENCE_SELECTOR),
-            'course_content': cls.extract_text(course_table, cls.COURSE_CONTENT_SELECTOR),
+            'course_name_en': self.extract_text(course_table, self.COURSE_NAME_EN_SELECTOR),
+            'course_professors': self.extract_text(course_table, self.COURSE_PROFESSORS_SELECTOR),
+            'course_prerequisites': self.extract_text(course_table, self.COURSE_PREREQUISITE_SELECTOR),
+            'course_competence': self.extract_text(course_table, self.COURSE_COMPETENCE_SELECTOR),
+            'course_content': self.extract_text(course_table, self.COURSE_CONTENT_SELECTOR),
         })
 
         course: CourseDetails = CourseDetails(**{**course_header._asdict(), **fields})
         logging.info(f"Scraped course {course}")
         return course
 
-    @classmethod
-    async def parse_data(cls, *args, **kwargs) -> CourseDetails:
-        course_header: CourseHeader = kwargs.get('item')
-        soup: BeautifulSoup = await Parser.get_parsed_html(course_header.course_url)
-        course_table: Tag = soup.select_one(cls.COURSE_TABLE_CLASS_NAME)
-        return await cls.parse_row(course_header=course_header, element=course_table)
+    def parse_data(self, *args, **kwargs) -> CourseDetails:
+        course_header: CourseHeader = kwargs.get('course_header')
+        page_content: str = kwargs.get('page_content')
+        soup: BeautifulSoup = Parser.get_parsed_html(page_content)
+        course_table: Tag = soup.select_one(self.COURSE_TABLE_CLASS_NAME)
+        return self.parse_row(course_header=course_header, element=course_table)
 
-    @classmethod
-    async def run(cls, executor: Executor) -> list[CourseDetails]:
+    async def fetch_page_wrapper(self, session: aiohttp.ClientSession, ssl_context: SSLContext, course_header: CourseHeader) -> tuple[str, CourseHeader]:
+        return await self.fetch_page(session=session, ssl_context=ssl_context, url=course_header.course_url), course_header
+
+    async def run(self, session: ClientSession, ssl_context: SSLContext, executor: Executor)  -> list[CourseDetails]:
 
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-        await CurriculumParser.COURSE_HEADERS_READY_EVENT.wait()
+        await loop.run_in_executor(None, CurriculumParser.CURRICULA_DONE_EVENT.wait)
+        tasks: list[Task[tuple[str, CourseHeader]]] = []
+        while not CurriculumParser.COURSE_HEADERS_QUEUE.empty():
+            course_header: CourseHeader = CurriculumParser.COURSE_HEADERS_QUEUE.get_nowait()
 
-        while True:
+            if course_header not in self.PROCESSED_COURSE_HEADERS:
+                tasks.append(asyncio.create_task(
+                    self.fetch_page_wrapper(session=session,
+                                            ssl_context=ssl_context,
+                                            course_header=course_header,
+                                            )
+                ))
+                self.PROCESSED_COURSE_HEADERS.add(course_header)
 
-            async with cls.async_lock(cls.CURRICULA_LOCK, executor):
-                if CurriculumParser.COURSE_HEADERS_QUEUE.empty() and CurriculumParser.CURRICULA_DONE_EVENT.is_set():
-                    cls.COURSES_DONE_EVENT.set()
-                    courses: list[CourseDetails] = await asyncio.gather(
-                        *[cls.COURSES_QUEUE.get_nowait() for _ in range(cls.COURSES_QUEUE.qsize())])  # type: ignore
-                    logging.info("Finished processing courses")
-                    await cls.validate(courses, await cls.load_schema(DatasetConfiguration.COURSES))
-                    await cls.save_data(courses, DatasetConfiguration.COURSES)
-                    return courses
+        results: list[dict[str, str | CourseHeader]] = await asyncio.gather(*tasks)
+        for page_content, course_header in results:
+            self.COURSES_QUEUE.put_nowait(
+            loop.run_in_executor(executor, partial(self.parse_data, course_header=course_header, page_content=page_content)))
 
-            while not CurriculumParser.COURSE_HEADERS_QUEUE.empty():
-                async with cls.async_lock(cls.COURSE_HEADERS_LOCK, executor):
-                    course_header: CourseHeader = CurriculumParser.COURSE_HEADERS_QUEUE.get_nowait()
-                    if course_header not in cls.PROCESSED_COURSE_HEADERS:
-                        cls.PROCESSED_COURSE_HEADERS.add(course_header)
-                        cls.COURSES_QUEUE.put_nowait(loop.run_in_executor(executor, partial(cls.run_parse_data, item=course_header)))
+        self.COURSES_DONE_EVENT.set()
+        courses: list[CourseDetails] = await asyncio.gather(
+            *[self.COURSES_QUEUE.get_nowait() for _ in range(self.COURSES_QUEUE.qsize())])  # type: ignore
+        logging.info("Finished processing courses")
+        await self.validate(courses, await self.load_schema(DatasetConfiguration.COURSES))
+        await self.save_data(courses, DatasetConfiguration.COURSES)
+        return courses

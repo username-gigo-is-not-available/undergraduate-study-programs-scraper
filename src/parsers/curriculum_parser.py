@@ -1,11 +1,14 @@
 import asyncio
 import logging
+import queue
 import threading
-from asyncio import Event, Task
+from asyncio import Task
 from concurrent.futures import Executor
 from functools import partial, reduce
-from queue import Queue
+from ssl import SSLContext
 
+import aiohttp
+from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import DatasetConfiguration
@@ -27,25 +30,22 @@ class CurriculumParser(Parser):
     COURSE_SEMESTER_SELECTOR: str = 'td:nth-child(3)'
     MANDATORY_COURSE_SEMESTER_SELECTOR: str = 'h3 > span'
 
-    COURSE_HEADERS_QUEUE: Queue = Queue()
-    COURSE_HEADERS_READY_EVENT: Event = Event()
-    CURRICULA_QUEUE: Queue = Queue()
-    CURRICULA_DONE_EVENT: Event = Event()
-    STUDY_PROGRAMS_LOCK: threading.Lock = threading.Lock()
+    COURSE_HEADERS_QUEUE: queue.Queue = queue.Queue()
+    CURRICULA_QUEUE: queue.Queue = queue.Queue()
+    CURRICULA_DONE_EVENT: threading.Event = threading.Event()
 
-    @classmethod
-    async def parse_row(cls, *args, **kwargs) -> CurriculumHeader:
+    def parse_row(self, *args, **kwargs) -> CurriculumHeader:
 
         study_program: StudyProgram = kwargs.get('study_program')
         course_row: Tag = kwargs.get('element')
         course_type: CourseType = kwargs.get('course_type')
 
         fields: dict[str, str | int] = CourseCorrectorStrategy.correct({
-            'course_code': cls.extract_text(course_row, cls.COURSE_CODE_SELECTOR),
-            'course_name_mk': cls.extract_text(course_row, cls.COURSE_NAME_AND_URL_SELECTOR),
-            'course_url': cls.extract_url(course_row, cls.COURSE_NAME_AND_URL_SELECTOR),
+            'course_code': self.extract_text(course_row, self.COURSE_CODE_SELECTOR),
+            'course_name_mk': self.extract_text(course_row, self.COURSE_NAME_AND_URL_SELECTOR),
+            'course_url': self.extract_url(course_row, self.COURSE_NAME_AND_URL_SELECTOR),
             'course_type': course_type,
-            'course_semester': int(cls.extract_text(course_row, cls.COURSE_SEMESTER_SELECTOR))
+            'course_semester': int(self.extract_text(course_row, self.COURSE_SEMESTER_SELECTOR))
         })
         course_header: CourseHeader = CourseHeader(
             course_code=fields.get('course_code'),
@@ -53,20 +53,18 @@ class CurriculumParser(Parser):
             course_url=fields.get('course_url'),
         )
 
-        cls.COURSE_HEADERS_QUEUE.put_nowait(course_header)
-        cls.COURSE_HEADERS_READY_EVENT.set()
+        self.COURSE_HEADERS_QUEUE.put_nowait(course_header)
 
         curriculum: CurriculumHeader = CurriculumHeader(**{**study_program._asdict(), **fields})
         logging.info(f"Scraped curriculum {curriculum}")
 
         return curriculum
 
-    @classmethod
-    async def parse_data(cls, *args, **kwargs) -> list[CurriculumHeader]:
+    def parse_data(self, *args, **kwargs) -> list[CurriculumHeader]:
 
-        async def parse_section(study_program: StudyProgram, course_type: CourseType, section: Tag) -> list[CurriculumHeader]:
+        def parse_section(study_program: StudyProgram, course_type: CourseType, section: Tag) -> list[CurriculumHeader]:
             def filter_course_rows(row: Tag) -> bool:
-                return bool(row.select_one(cls.COURSE_CODE_SELECTOR) and row.select_one(cls.COURSE_NAME_AND_URL_SELECTOR))
+                return bool(row.select_one(self.COURSE_CODE_SELECTOR) and row.select_one(self.COURSE_NAME_AND_URL_SELECTOR))
 
             def modify_course_row(row: Tag, tag_name: str, text: str) -> Tag:
                 tag: Tag = Tag(name=tag_name)
@@ -74,45 +72,51 @@ class CurriculumParser(Parser):
                 row.append(tag)
                 return row
 
-            filtered_course_rows: list[Tag] = list(filter(filter_course_rows, section.select(cls.COURSE_SECTION_ROWS_SELECTOR)))
-            augmented_course_rows: list[Tag] = [modify_course_row(row, 'td', cls.extract_text(section, cls.MANDATORY_COURSE_SEMESTER_SELECTOR))
+            filtered_course_rows: list[Tag] = list(filter(filter_course_rows, section.select(self.COURSE_SECTION_ROWS_SELECTOR)))
+            augmented_course_rows: list[Tag] = [modify_course_row(row, 'td', self.extract_text(section, self.MANDATORY_COURSE_SEMESTER_SELECTOR))
                                       if course_type == CourseType.MANDATORY else row for row in filtered_course_rows]
 
-            tasks: list[Task[CurriculumHeader]] = [asyncio.create_task(
-                cls.parse_row(study_program=study_program, element=course_row, course_type=course_type))
-                for course_row in augmented_course_rows]
+            return [
+                self.parse_row(study_program=study_program, element=course_row, course_type=course_type)
+                for course_row in augmented_course_rows
+            ]
 
-            return await asyncio.gather(*tasks)  # type: ignore
+        study_program: StudyProgram = kwargs.get('study_program')
+        page_content: str = kwargs.get('page_content')
+        soup: BeautifulSoup = self.get_parsed_html(page_content)
+        nested_curricula: list[list[CurriculumHeader]] = []
 
-        study_program: StudyProgram = kwargs.get('item')
-        soup: BeautifulSoup = await cls.get_parsed_html(study_program.study_program_url)
-        tasks: list[Task[list[CurriculumHeader]]] = []
+        for section in soup.select(self.MANDATORY_COURSE_SECTION_SELECTOR):
+            nested_curricula.append(parse_section(study_program, CourseType.MANDATORY, section))
+        for section in soup.select(self.ELECTIVE_COURSE_SECTION_SELECTOR):
+            nested_curricula.append(parse_section(study_program, CourseType.ELECTIVE, section))
 
-        for section in soup.select(cls.MANDATORY_COURSE_SECTION_SELECTOR):
-            tasks.append(asyncio.create_task(parse_section(study_program, CourseType.MANDATORY, section)))
-        for section in soup.select(cls.ELECTIVE_COURSE_SECTION_SELECTOR):
-            tasks.append(asyncio.create_task(parse_section(study_program, CourseType.ELECTIVE, section)))
+        return reduce(lambda x, y: x + y, nested_curricula)
 
-        return reduce(lambda x, y: x + y, await asyncio.gather(*tasks))  # type: ignore
+    async def fetch_page_wrapper(self, session: aiohttp.ClientSession, ssl_context: SSLContext, study_program: StudyProgram) -> tuple[str, StudyProgram]:
+        return await self.fetch_page(session=session, ssl_context=ssl_context, url=study_program.study_program_url), study_program
 
-    @classmethod
-    async def run(cls, executor: Executor) -> list[CurriculumHeader]:
+    async def run(self, session: ClientSession, ssl_context: SSLContext, executor: Executor)  -> list[CurriculumHeader]:
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.wait)
+        tasks: list[Task[tuple[str, StudyProgram]]] = []
+        while not StudyProgramParser.STUDY_PROGRAMS_QUEUE.empty():
+            study_program: StudyProgram = StudyProgramParser.STUDY_PROGRAMS_QUEUE.get_nowait()
+            tasks.append(asyncio.create_task(
+                    self.fetch_page_wrapper(session=session,
+                                    ssl_context=ssl_context,
+                                    study_program=study_program,
+                                    )
+                         ))
+        results: list[dict[str, str | StudyProgram]] = await asyncio.gather(*tasks)
+        for page_content, study_program in results:
+            self.CURRICULA_QUEUE.put_nowait(loop.run_in_executor(executor, partial(self.parse_data, study_program=study_program, page_content=page_content)))
 
-        await StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.wait()
-
-        while True:
-            async with cls.async_lock(cls.STUDY_PROGRAMS_LOCK, executor):
-                if StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.is_set() and StudyProgramParser.STUDY_PROGRAMS_QUEUE.empty():
-                    cls.CURRICULA_DONE_EVENT.set()
-                    nested_curricula: list[list[CurriculumHeader]] = await asyncio.gather(
-                        *[cls.CURRICULA_QUEUE.get_nowait() for _ in range(cls.CURRICULA_QUEUE.qsize())])  # type: ignore
-                    curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, nested_curricula)
-                    logging.info("Finished processing curricula")
-                    await cls.validate(curricula, await cls.load_schema(DatasetConfiguration.CURRICULA))
-                    await cls.save_data(curricula, DatasetConfiguration.CURRICULA)
-                    return curricula
-
-            while not StudyProgramParser.STUDY_PROGRAMS_QUEUE.empty():
-                study_program: StudyProgram = StudyProgramParser.STUDY_PROGRAMS_QUEUE.get_nowait()
-                cls.CURRICULA_QUEUE.put_nowait(loop.run_in_executor(executor, partial(cls.run_parse_data, item=study_program)))
+        nested_curricula: list[list[CurriculumHeader]] = await asyncio.gather(
+            *[self.CURRICULA_QUEUE.get_nowait() for _ in range(self.CURRICULA_QUEUE.qsize())])  # type: ignore
+        self.CURRICULA_DONE_EVENT.set()
+        curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, nested_curricula)
+        logging.info("Finished processing curricula")
+        await self.validate(curricula, await self.load_schema(DatasetConfiguration.CURRICULA))
+        await self.save_data(curricula, DatasetConfiguration.CURRICULA)
+        return curricula

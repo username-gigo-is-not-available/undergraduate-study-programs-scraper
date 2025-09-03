@@ -1,22 +1,19 @@
 import logging
-import ssl
+from ssl import SSLContext
 
 import aiohttp
-import certifi
 from aiohttp import ClientTimeout
 from bs4 import BeautifulSoup
 
-from src.configurations import StorageConfiguration, ApplicationConfiguration
+from src.configurations import  ApplicationConfiguration
 
 
 class HTTPClientMixin:
 
     @classmethod
-    async def fetch_page(cls, url: str) -> str:
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
+    async def fetch_page(cls, session: aiohttp.ClientSession, ssl_context: SSLContext, url: str) -> str | None:
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, ssl=ssl_context, timeout=ClientTimeout(total=ApplicationConfiguration.REQUESTS_TIMEOUT_SECONDS)) as response:
+            async with session.get(url, ssl=ssl_context, timeout=ClientTimeout(total=ApplicationConfiguration.REQUESTS_TIMEOUT_SECONDS)) as response:
                     logging.info(f"Fetching page {url}")
                     return await response.text()
         except aiohttp.ClientTimeout as e:
@@ -25,6 +22,5 @@ class HTTPClientMixin:
             logging.error(f"Failed to fetch the page at {url}: {e}")
 
     @classmethod
-    async def get_parsed_html(cls, url: str) -> BeautifulSoup:
-        html: str = await HTTPClientMixin.fetch_page(url)
+    def get_parsed_html(cls, html: str) -> BeautifulSoup:
         return BeautifulSoup(html, 'lxml')

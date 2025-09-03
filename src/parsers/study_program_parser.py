@@ -1,8 +1,10 @@
-import asyncio
 import logging
-from queue import Queue
+import queue
+import threading
+from ssl import SSLContext
 from typing import List
 
+from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import DatasetConfiguration
@@ -19,42 +21,43 @@ class StudyProgramParser(Parser):
     STUDY_PROGRAM_NAME_SELECTOR: str = 'span:nth-child(1)'
     STUDY_PROGRAM_DURATION_SELECTOR: str = 'span:nth-child(2)'
 
-    STUDY_PROGRAMS_QUEUE: Queue = Queue()
-    STUDY_PROGRAMS_READY_EVENT: asyncio.Event = asyncio.Event()
+    STUDY_PROGRAMS_QUEUE: queue.Queue = queue.Queue()
+    STUDY_PROGRAMS_READY_EVENT: threading.Event = threading.Event()
 
-    @classmethod
-    async def parse_row(cls, *args, **kwargs) -> StudyProgram:
+    def parse_row(self, *args, **kwargs) -> StudyProgram:
         study_program_row: Tag = kwargs.get('element')
 
         study_program: StudyProgram = StudyProgram(
-            study_program_name=cls.extract_text(study_program_row, cls.STUDY_PROGRAM_NAME_SELECTOR),
-            study_program_duration=int(cls.extract_text(study_program_row, cls.STUDY_PROGRAM_DURATION_SELECTOR)),
-            study_program_url=cls.extract_url(study_program_row, cls.STUDY_PROGRAM_URL_SELECTOR)
+            study_program_name=self.extract_text(study_program_row, self.STUDY_PROGRAM_NAME_SELECTOR),
+            study_program_duration=int(self.extract_text(study_program_row, self.STUDY_PROGRAM_DURATION_SELECTOR)),
+            study_program_url=self.extract_url(study_program_row, self.STUDY_PROGRAM_URL_SELECTOR)
         )
         logging.info(f"Scraped study_program {study_program}")
         return study_program
 
-    @classmethod
-    async def parse_data(cls, *args, **kwargs) -> list[StudyProgram]:
+    def parse_data(self, *args, **kwargs) -> list[StudyProgram]:
         def is_macedonian_study_program(study_program: StudyProgram) -> bool:
             return study_program.study_program_url.endswith('mk')
 
         soup: BeautifulSoup = kwargs.get('soup')
-        study_program_elements: List[Tag] = soup.select(cls.STUDY_PROGRAMS_2023_LI_SELECTOR)
+        study_program_elements: List[Tag] = soup.select(self.STUDY_PROGRAMS_2023_LI_SELECTOR)
 
-        study_programs: List[StudyProgram] = [await cls.parse_row(element=study_program) for study_program in study_program_elements]
+        study_programs: List[StudyProgram] = [self.parse_row(element=study_program) for study_program in study_program_elements]
 
         return list(filter(is_macedonian_study_program, study_programs))
 
-    @classmethod
-    async def run(cls) -> list[StudyProgram]:
-        soup: BeautifulSoup = await Parser.get_parsed_html(cls.STUDY_PROGRAMS_URL)
-        study_programs: List[StudyProgram] = await cls.parse_data(soup=soup)
+    async def run(self, session: ClientSession, ssl_context: SSLContext) -> list[StudyProgram]:
+        page_content: str = await self.fetch_page(session=session,
+                                          ssl_context=ssl_context,
+                                          url=self.STUDY_PROGRAMS_URL,
+                                          )
+        soup: BeautifulSoup = self.get_parsed_html(page_content)
+        study_programs: List[StudyProgram] = self.parse_data(soup=soup)
         for study_program in study_programs:
-            cls.STUDY_PROGRAMS_QUEUE.put_nowait(study_program)
-            if not cls.STUDY_PROGRAMS_READY_EVENT.is_set():
-                cls.STUDY_PROGRAMS_READY_EVENT.set()
+            self.STUDY_PROGRAMS_QUEUE.put_nowait(study_program)
+            if not self.STUDY_PROGRAMS_READY_EVENT.is_set():
+                self.STUDY_PROGRAMS_READY_EVENT.set()
         logging.info("Finished processing study programs")
-        await cls.validate(study_programs, await cls.load_schema(DatasetConfiguration.STUDY_PROGRAMS))
-        await cls.save_data(study_programs, DatasetConfiguration.STUDY_PROGRAMS)
+        await self.validate(study_programs, await self.load_schema(DatasetConfiguration.STUDY_PROGRAMS))
+        await self.save_data(study_programs, DatasetConfiguration.STUDY_PROGRAMS)
         return study_programs
