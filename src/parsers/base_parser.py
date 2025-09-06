@@ -1,14 +1,22 @@
+from typing import NamedTuple
 
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import ApplicationConfiguration
-from src.patterns.mixin.data_processing import ProcessingMixin
 from src.patterns.mixin.storage import StorageMixin
 from src.patterns.mixin.http_client import HTTPClientMixin
 from src.patterns.mixin.validation import SchemaValidationMixin
 
 
-class Parser(ProcessingMixin, StorageMixin, HTTPClientMixin, SchemaValidationMixin):
+class Parser(StorageMixin, HTTPClientMixin, SchemaValidationMixin):
+
+    @classmethod
+    async def parse_row(cls, *args, **kwargs) -> NamedTuple:
+        pass
+
+    @classmethod
+    async def parse_data(cls, *args, **kwargs) -> list[NamedTuple]:
+        pass
 
     @classmethod
     def get_parsed_html(cls, html: str) -> BeautifulSoup:
