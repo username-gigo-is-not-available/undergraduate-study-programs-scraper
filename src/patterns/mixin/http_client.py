@@ -3,7 +3,6 @@ from ssl import SSLContext
 
 import aiohttp
 from aiohttp import ClientTimeout
-from bs4 import BeautifulSoup
 
 from src.configurations import  ApplicationConfiguration
 
@@ -20,7 +19,3 @@ class HTTPClientMixin:
             logging.error(f"Request to {url} timed out: {e}")
         except aiohttp.ClientError as e:
             logging.error(f"Failed to fetch the page at {url}: {e}")
-
-    @classmethod
-    def get_parsed_html(cls, html: str) -> BeautifulSoup:
-        return BeautifulSoup(html, 'lxml')

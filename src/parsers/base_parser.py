@@ -1,5 +1,5 @@
 
-from bs4 import Tag
+from bs4 import Tag, BeautifulSoup
 
 from src.configurations import ApplicationConfiguration
 from src.patterns.mixin.data_processing import ProcessingMixin
@@ -9,6 +9,10 @@ from src.patterns.mixin.validation import SchemaValidationMixin
 
 
 class Parser(ProcessingMixin, StorageMixin, HTTPClientMixin, SchemaValidationMixin):
+
+    @classmethod
+    def get_parsed_html(cls, html: str) -> BeautifulSoup:
+        return BeautifulSoup(html, 'lxml')
 
     @classmethod
     def extract_text(cls, tag: Tag, selector: str) -> str:
