@@ -12,6 +12,3 @@ class ProcessingMixin:
     async def parse_data(cls, *args, **kwargs) -> list[NamedTuple]:
         pass
 
-    @classmethod
-    def run_parse_data(cls, *args, **kwargs) -> list[NamedTuple]:
-        return asyncio.run(cls.parse_data(*args, **kwargs))
