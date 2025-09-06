@@ -57,7 +57,7 @@ class StudyProgramParser(Parser):
             self.STUDY_PROGRAMS_QUEUE.put_nowait(study_program)
             if not self.STUDY_PROGRAMS_READY_EVENT.is_set():
                 self.STUDY_PROGRAMS_READY_EVENT.set()
-        logging.info("Finished processing study programs")
+        logging.info(f"Finished processing {DatasetConfiguration.STUDY_PROGRAMS.dataset_name}")
         await self.validate(study_programs, await self.load_schema(DatasetConfiguration.STUDY_PROGRAMS))
         await self.save_data(study_programs, DatasetConfiguration.STUDY_PROGRAMS)
         return study_programs

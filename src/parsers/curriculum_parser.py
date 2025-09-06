@@ -116,7 +116,7 @@ class CurriculumParser(Parser):
             *[self.CURRICULA_QUEUE.get_nowait() for _ in range(self.CURRICULA_QUEUE.qsize())])  # type: ignore
         self.CURRICULA_DONE_EVENT.set()
         curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, nested_curricula)
-        logging.info("Finished processing curricula")
+        logging.info(f"Finished processing {DatasetConfiguration.CURRICULA.dataset_name}")
         await self.validate(curricula, await self.load_schema(DatasetConfiguration.CURRICULA))
         await self.save_data(curricula, DatasetConfiguration.CURRICULA)
         return curricula

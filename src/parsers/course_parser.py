@@ -87,7 +87,7 @@ class CourseParser(Parser):
         self.COURSES_DONE_EVENT.set()
         courses: list[CourseDetails] = await asyncio.gather(
             *[self.COURSES_QUEUE.get_nowait() for _ in range(self.COURSES_QUEUE.qsize())])  # type: ignore
-        logging.info("Finished processing courses")
+        logging.info(f"Finished processing {DatasetConfiguration.COURSES.dataset_name}")
         await self.validate(courses, await self.load_schema(DatasetConfiguration.COURSES))
         await self.save_data(courses, DatasetConfiguration.COURSES)
         return courses
