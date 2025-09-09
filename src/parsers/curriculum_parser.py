@@ -108,8 +108,8 @@ class CurriculumParser(Parser):
                                     study_program=study_program,
                                     )
                          ))
-        results: list[dict[str, str | StudyProgram]] = await asyncio.gather(*tasks)
-        for page_content, study_program in results:
+        for task in asyncio.as_completed(tasks):
+            page_content, study_program = await task
             self.CURRICULA_QUEUE.put_nowait(loop.run_in_executor(executor, partial(self.parse_data, study_program=study_program, page_content=page_content)))
 
         nested_curricula: list[list[CurriculumHeader]] = await asyncio.gather(

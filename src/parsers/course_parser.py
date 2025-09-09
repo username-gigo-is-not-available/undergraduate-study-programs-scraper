@@ -79,8 +79,8 @@ class CourseParser(Parser):
                 ))
                 self.PROCESSED_COURSE_HEADERS.add(course_header)
 
-        results: list[dict[str, str | CourseHeader]] = await asyncio.gather(*tasks)
-        for page_content, course_header in results:
+        for task in asyncio.as_completed(tasks):
+            page_content, course_header = await task
             self.COURSES_QUEUE.put_nowait(
             loop.run_in_executor(executor, partial(self.parse_data, course_header=course_header, page_content=page_content)))
 
