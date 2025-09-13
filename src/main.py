@@ -22,7 +22,7 @@ async def main():
     session: ClientSession = aiohttp.ClientSession()
     ssl_context: ssl.SSLContext = ssl.create_default_context(cafile=certifi.where())
     tasks: list[asyncio.Task] = [asyncio.create_task(StudyProgramParser().run(session=session, ssl_context=ssl_context))]
-    with ThreadPoolExecutor(max_workers=ApplicationConfiguration.MAX_WORKERS) as executor:
+    with ThreadPoolExecutor(max_workers=ApplicationConfiguration.NUMBER_OF_THREADS) as executor:
         tasks.append(asyncio.create_task(CurriculumParser().run(session=session, ssl_context=ssl_context, executor=executor)))
         tasks.append(asyncio.create_task(CourseParser().run(session=session, ssl_context=ssl_context, executor=executor)))
         await asyncio.gather(*tasks)

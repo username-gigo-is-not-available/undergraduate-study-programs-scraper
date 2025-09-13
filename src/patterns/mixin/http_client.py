@@ -1,21 +1,24 @@
+import asyncio
 import logging
 from ssl import SSLContext
+from typing import Any, Coroutine
 
 import aiohttp
-from aiohttp import ClientTimeout
-
+from aiohttp import ClientTimeout, ClientError
+from tenacity import retry, wait_fixed, retry_if_exception_type, stop_after_attempt
 from src.configurations import  ApplicationConfiguration
 
 
 class HTTPClientMixin:
 
     @classmethod
-    async def fetch_page(cls, session: aiohttp.ClientSession, ssl_context: SSLContext, url: str) -> str | None:
-        try:
-            async with session.get(url, ssl=ssl_context, timeout=ClientTimeout(total=ApplicationConfiguration.REQUESTS_TIMEOUT_SECONDS)) as response:
-                    logging.info(f"Fetching page {url}")
-                    return await response.text()
-        except aiohttp.ClientTimeout as e:
-            logging.error(f"Request to {url} timed out: {e}")
-        except aiohttp.ClientError as e:
-            logging.error(f"Failed to fetch the page at {url}: {e}")
+    @retry(
+        stop=stop_after_attempt(ApplicationConfiguration.REQUEST_RETRY_COUNT),
+        wait=wait_fixed(ApplicationConfiguration.REQUESTS_RETRY_DELAY_SECONDS),
+        retry=retry_if_exception_type((asyncio.TimeoutError, ClientError)),
+        reraise=True
+    )
+    async def fetch_page(cls, session: aiohttp.ClientSession, ssl_context: SSLContext, url: str) -> tuple[int, str]:
+        async with session.get(url, ssl=ssl_context, timeout=ClientTimeout(total=ApplicationConfiguration.REQUESTS_TIMEOUT_SECONDS)) as response:
+                logging.info(f"Fetching page {url}")
+                return response.status, await response.text()

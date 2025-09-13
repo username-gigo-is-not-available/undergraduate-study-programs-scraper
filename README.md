@@ -21,8 +21,10 @@ Before running the scraper, make sure to set the following environment variables
 
 - `FILE_STORAGE_TYPE`: the type of storage that will be used to save the scraped data. The possible values are "LOCAL"
   and "MINIO"
-- `MAX_WORKERS`: the maximum number of workers that will be used to scrape the website
-- `REQUEST_TIMEOUT_SECONDS`: the timeout for all HTTP requests in seconds
+- `NUMBER_OF_THREADS`: the maximum number of threads that will be used to scrape the website
+- `REQUEST_TIMEOUT_SECONDS`: maximum wait time for an HTTP request in seconds before timing out
+- `REQUESTS_RETRY_COUNT`: the number of the retries for an HTTP request if it fails
+- `REQUESTS_RETRY_DELAY_SECONDS`: the wait delay for an HTTP request in seconds after failure
 
 - `STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME`: the name of the file where the study programs data will be saved
 - `CURRICULUM_DATA_OUTPUT_FILE_NAME`: the name of the file where the curriculum data will be saved

@@ -5,6 +5,7 @@ import threading
 from asyncio import Task
 from concurrent.futures import Executor
 from functools import partial, reduce
+from http import HTTPStatus
 from ssl import SSLContext
 
 import aiohttp
@@ -32,7 +33,8 @@ class CurriculumParser(Parser):
 
     COURSE_HEADERS_QUEUE: queue.Queue = queue.Queue()
     CURRICULA_QUEUE: queue.Queue = queue.Queue()
-    CURRICULA_DONE_EVENT: threading.Event = threading.Event()
+    CURRICULA_DONE_EVENT: asyncio.Event = asyncio.Event()
+    COURSE_HEADERS_READY_EVENT: threading.Event = threading.Event()
 
     def parse_row(self, *args, **kwargs) -> CurriculumHeader:
 
@@ -54,6 +56,8 @@ class CurriculumParser(Parser):
         )
 
         self.COURSE_HEADERS_QUEUE.put_nowait(course_header)
+        if not self.COURSE_HEADERS_READY_EVENT.is_set():
+            self.COURSE_HEADERS_READY_EVENT.set()
 
         curriculum: CurriculumHeader = CurriculumHeader(**{**study_program._asdict(), **fields})
         logging.info(f"Scraped curriculum {curriculum}")
@@ -93,13 +97,14 @@ class CurriculumParser(Parser):
 
         return reduce(lambda x, y: x + y, nested_curricula)
 
-    async def fetch_page_wrapper(self, session: aiohttp.ClientSession, ssl_context: SSLContext, study_program: StudyProgram) -> tuple[str, StudyProgram]:
-        return await self.fetch_page(session=session, ssl_context=ssl_context, url=study_program.study_program_url), study_program
+    async def fetch_page_wrapper(self, session: aiohttp.ClientSession, ssl_context: SSLContext, study_program: StudyProgram) -> tuple[int, str, StudyProgram]:
+        http_status, page_content = await self.fetch_page(session=session, ssl_context=ssl_context, url=study_program.study_program_url)
+        return http_status, page_content , study_program
 
     async def run(self, session: ClientSession, ssl_context: SSLContext, executor: Executor)  -> list[CurriculumHeader]:
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.wait)
-        tasks: list[Task[tuple[str, StudyProgram]]] = []
+        await StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.wait()
+        tasks: list[Task[tuple[int, str, StudyProgram]]] = []
         while not StudyProgramParser.STUDY_PROGRAMS_QUEUE.empty():
             study_program: StudyProgram = StudyProgramParser.STUDY_PROGRAMS_QUEUE.get_nowait()
             tasks.append(asyncio.create_task(
@@ -109,14 +114,20 @@ class CurriculumParser(Parser):
                                     )
                          ))
         for task in asyncio.as_completed(tasks):
-            page_content, study_program = await task
+            http_status, page_content, study_program = await task
+            if http_status != HTTPStatus.OK:
+                if http_status != HTTPStatus.OK:
+                    logging.error(
+                        f"Tried to fetch {study_program.study_program_url} but got HTTP status: {http_status}"
+                    )
+                    break
             self.CURRICULA_QUEUE.put_nowait(loop.run_in_executor(executor, partial(self.parse_data, study_program=study_program, page_content=page_content)))
 
         nested_curricula: list[list[CurriculumHeader]] = await asyncio.gather(
             *[self.CURRICULA_QUEUE.get_nowait() for _ in range(self.CURRICULA_QUEUE.qsize())])  # type: ignore
         self.CURRICULA_DONE_EVENT.set()
         curricula: list[CurriculumHeader] = reduce(lambda x, y: x + y, nested_curricula)
-        logging.info(f"Finished processing {DatasetConfiguration.CURRICULA.dataset_name}")
+        logging.info(f"Finished processing {DatasetConfiguration.CURRICULA}")
         await self.validate(curricula, await self.load_schema(DatasetConfiguration.CURRICULA))
         await self.save_data(curricula, DatasetConfiguration.CURRICULA)
         return curricula

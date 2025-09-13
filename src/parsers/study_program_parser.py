@@ -1,6 +1,8 @@
+import asyncio
 import logging
 import queue
 import threading
+from http import HTTPStatus
 from ssl import SSLContext
 from typing import List
 
@@ -21,7 +23,7 @@ class StudyProgramParser(Parser):
     STUDY_PROGRAM_DURATION_SELECTOR: str = 'span:nth-child(2)'
 
     STUDY_PROGRAMS_QUEUE: queue.Queue = queue.Queue()
-    STUDY_PROGRAMS_READY_EVENT: threading.Event = threading.Event()
+    STUDY_PROGRAMS_READY_EVENT: asyncio.Event = asyncio.Event()
 
     def parse_row(self, *args, **kwargs) -> StudyProgram:
         study_program_row: Tag = kwargs.get('element')
@@ -46,17 +48,22 @@ class StudyProgramParser(Parser):
         return list(filter(is_macedonian_study_program, study_programs))
 
     async def run(self, session: ClientSession, ssl_context: SSLContext) -> list[StudyProgram]:
-        page_content: str = await self.fetch_page(session=session,
+        http_status, page_content= await self.fetch_page(session=session,
                                           ssl_context=ssl_context,
                                           url=ApplicationConfiguration.STUDY_PROGRAMS_URL,
                                           )
+        if http_status != HTTPStatus.OK:
+            logging.error(
+                f"Tried to fetch {ApplicationConfiguration.STUDY_PROGRAMS_URL} but got HTTP status: {http_status}"
+            )
+            return []
         soup: BeautifulSoup = self.get_parsed_html(page_content)
         study_programs: List[StudyProgram] = self.parse_data(soup=soup)
         for study_program in study_programs:
             self.STUDY_PROGRAMS_QUEUE.put_nowait(study_program)
             if not self.STUDY_PROGRAMS_READY_EVENT.is_set():
                 self.STUDY_PROGRAMS_READY_EVENT.set()
-        logging.info(f"Finished processing {DatasetConfiguration.STUDY_PROGRAMS.dataset_name}")
+        logging.info(f"Finished processing {DatasetConfiguration.STUDY_PROGRAMS}")
         await self.validate(study_programs, await self.load_schema(DatasetConfiguration.STUDY_PROGRAMS))
         await self.save_data(study_programs, DatasetConfiguration.STUDY_PROGRAMS)
         return study_programs

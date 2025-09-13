@@ -14,10 +14,13 @@ class ApplicationConfiguration:
     COURSE_CODES_REGEX: re.Pattern[str] = re.compile(r'^F23L[1-3][SW]\d{3}')
 
     THREADS_PER_CPU_CORE: int = 5
-    MAX_WORKERS: int = THREADS_PER_CPU_CORE * os.cpu_count() if ENVIRONMENT_VARIABLES.get(
-        'MAX_WORKERS') == 'MAX_WORKERS' else (
-        int(ENVIRONMENT_VARIABLES.get('MAX_WORKERS')))
-    REQUESTS_TIMEOUT_SECONDS: int = int(ENVIRONMENT_VARIABLES.get('REQUESTS_TIMEOUT_SECONDS'))
+    NUMBER_OF_THREADS: int = THREADS_PER_CPU_CORE * os.cpu_count() if ENVIRONMENT_VARIABLES.get(
+        'NUMBER_OF_THREADS') == '-1' else (
+        int(ENVIRONMENT_VARIABLES.get('NUMBER_OF_THREADS')))
+
+    REQUESTS_TIMEOUT_SECONDS: float = float(ENVIRONMENT_VARIABLES.get('REQUESTS_TIMEOUT_SECONDS'))
+    REQUEST_RETRY_COUNT: int = int(ENVIRONMENT_VARIABLES.get('REQUEST_RETRY_COUNT'))
+    REQUESTS_RETRY_DELAY_SECONDS: float = float(ENVIRONMENT_VARIABLES.get("REQUESTS_RETRY_DELAY_SECONDS"))
 
 
 class StorageConfiguration:
@@ -61,6 +64,9 @@ class DatasetConfiguration:
         self.dataset_name = dataset
         self.output_io_configuration = output_io_configuration
         self.schema_configuration = schema_configuration
+
+    def __str__(self):
+        return self.dataset_name
 
 
 DatasetConfiguration.STUDY_PROGRAMS = DatasetConfiguration(DatasetType.STUDY_PROGRAMS,

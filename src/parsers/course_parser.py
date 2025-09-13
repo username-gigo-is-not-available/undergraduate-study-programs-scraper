@@ -1,9 +1,11 @@
 import asyncio
 import logging
+import queue
 import threading
 from asyncio import Task
 from concurrent.futures import Executor
 from functools import partial
+from http import HTTPStatus
 from queue import Queue
 from ssl import SSLContext
 
@@ -59,16 +61,24 @@ class CourseParser(Parser):
         course_table: Tag = soup.select_one(self.COURSE_TABLE_CLASS_NAME)
         return self.parse_row(course_header=course_header, element=course_table)
 
-    async def fetch_page_wrapper(self, session: aiohttp.ClientSession, ssl_context: SSLContext, course_header: CourseHeader) -> tuple[str, CourseHeader]:
-        return await self.fetch_page(session=session, ssl_context=ssl_context, url=course_header.course_url), course_header
+    async def fetch_page_wrapper(self, session: aiohttp.ClientSession, ssl_context: SSLContext, course_header: CourseHeader) -> tuple[int, str, CourseHeader]:
+        http_status, page_content = await self.fetch_page(session=session, ssl_context=ssl_context, url=course_header.course_url)
+        return http_status, page_content , course_header
 
     async def run(self, session: ClientSession, ssl_context: SSLContext, executor: Executor)  -> list[CourseDetails]:
 
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, CurriculumParser.CURRICULA_DONE_EVENT.wait)
-        tasks: list[Task[tuple[str, CourseHeader]]] = []
-        while not CurriculumParser.COURSE_HEADERS_QUEUE.empty():
-            course_header: CourseHeader = CurriculumParser.COURSE_HEADERS_QUEUE.get_nowait()
+        await loop.run_in_executor(None, CurriculumParser.COURSE_HEADERS_READY_EVENT.wait)
+        tasks: list[Task[tuple[int, str, CourseHeader]]] = []
+        while True:
+            try:
+                course_header: CourseHeader = CurriculumParser.COURSE_HEADERS_QUEUE.get_nowait()
+            except queue.Empty:
+                if CurriculumParser.CURRICULA_DONE_EVENT.is_set():
+                    break
+                else:
+                    await asyncio.sleep(0.2)
+                    continue
 
             if course_header not in self.PROCESSED_COURSE_HEADERS:
                 tasks.append(asyncio.create_task(
@@ -80,14 +90,19 @@ class CourseParser(Parser):
                 self.PROCESSED_COURSE_HEADERS.add(course_header)
 
         for task in asyncio.as_completed(tasks):
-            page_content, course_header = await task
+            http_status, page_content, course_header = await task
+            if http_status != HTTPStatus.OK:
+                logging.error(
+                    f"Tried to fetch {course_header.course_url} but got HTTP status: {http_status}"
+                )
+                break
             self.COURSES_QUEUE.put_nowait(
             loop.run_in_executor(executor, partial(self.parse_data, course_header=course_header, page_content=page_content)))
 
         self.COURSES_DONE_EVENT.set()
         courses: list[CourseDetails] = await asyncio.gather(
             *[self.COURSES_QUEUE.get_nowait() for _ in range(self.COURSES_QUEUE.qsize())])  # type: ignore
-        logging.info(f"Finished processing {DatasetConfiguration.COURSES.dataset_name}")
+        logging.info(f"Finished processing {DatasetConfiguration.COURSES}")
         await self.validate(courses, await self.load_schema(DatasetConfiguration.COURSES))
         await self.save_data(courses, DatasetConfiguration.COURSES)
         return courses
