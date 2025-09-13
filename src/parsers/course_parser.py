@@ -61,10 +61,6 @@ class CourseParser(Parser):
         course_table: Tag = soup.select_one(self.COURSE_TABLE_CLASS_NAME)
         return self.parse_row(course_header=course_header, element=course_table)
 
-    async def fetch_page_wrapper(self, session: aiohttp.ClientSession, ssl_context: SSLContext, course_header: CourseHeader) -> tuple[int, str, CourseHeader]:
-        http_status, page_content = await self.fetch_page(session=session, ssl_context=ssl_context, url=course_header.course_url)
-        return http_status, page_content , course_header
-
     async def run(self, session: ClientSession, ssl_context: SSLContext, executor: Executor)  -> list[CourseDetails]:
 
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
@@ -77,14 +73,15 @@ class CourseParser(Parser):
                 if CurriculumParser.CURRICULA_DONE_EVENT.is_set():
                     break
                 else:
-                    await asyncio.sleep(0.2)
+                    await asyncio.sleep(0.1)
                     continue
 
             if course_header not in self.PROCESSED_COURSE_HEADERS:
                 tasks.append(asyncio.create_task(
                     self.fetch_page_wrapper(session=session,
                                             ssl_context=ssl_context,
-                                            course_header=course_header,
+                                            url=course_header.course_url,
+                                            named_tuple=course_header,
                                             )
                 ))
                 self.PROCESSED_COURSE_HEADERS.add(course_header)

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from ssl import SSLContext
-from typing import Any, Coroutine
+from typing import Any, Coroutine, NamedTuple
 
 import aiohttp
 from aiohttp import ClientTimeout, ClientError
@@ -22,3 +22,9 @@ class HTTPClientMixin:
         async with session.get(url, ssl=ssl_context, timeout=ClientTimeout(total=ApplicationConfiguration.REQUESTS_TIMEOUT_SECONDS)) as response:
                 logging.info(f"Fetching page {url}")
                 return response.status, await response.text()
+
+    @classmethod
+    async def fetch_page_wrapper(cls, session: aiohttp.ClientSession, ssl_context: SSLContext, url: str,
+                                 named_tuple: NamedTuple) -> tuple[int, str, NamedTuple]:
+        http_status, page_content = await cls.fetch_page(session, ssl_context, url)
+        return http_status, page_content, named_tuple

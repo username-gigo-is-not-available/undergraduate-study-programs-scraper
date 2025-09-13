@@ -97,9 +97,6 @@ class CurriculumParser(Parser):
 
         return reduce(lambda x, y: x + y, nested_curricula)
 
-    async def fetch_page_wrapper(self, session: aiohttp.ClientSession, ssl_context: SSLContext, study_program: StudyProgram) -> tuple[int, str, StudyProgram]:
-        http_status, page_content = await self.fetch_page(session=session, ssl_context=ssl_context, url=study_program.study_program_url)
-        return http_status, page_content , study_program
 
     async def run(self, session: ClientSession, ssl_context: SSLContext, executor: Executor)  -> list[CurriculumHeader]:
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
@@ -110,7 +107,8 @@ class CurriculumParser(Parser):
             tasks.append(asyncio.create_task(
                     self.fetch_page_wrapper(session=session,
                                     ssl_context=ssl_context,
-                                    study_program=study_program,
+                                    url=study_program.study_program_url,
+                                    named_tuple=study_program,
                                     )
                          ))
         for task in asyncio.as_completed(tasks):
