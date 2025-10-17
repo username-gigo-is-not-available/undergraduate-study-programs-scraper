@@ -23,7 +23,6 @@ class CourseSemesterSeasonType(UpperStrEnum):
     def from_str(cls, value: str) -> 'CourseSemesterSeasonType':
         return cls.WINTER if value == 'Зимски' else cls.SUMMER
 
-class DatasetType(UpperStrEnum):
-    STUDY_PROGRAMS = auto()
-    COURSES = auto()
-    CURRICULA = auto()
+class FileIOType(UpperStrEnum):
+    S3 = auto()
+    LOCAL = auto()
