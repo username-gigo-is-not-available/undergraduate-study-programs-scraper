@@ -1,17 +1,9 @@
 import re
-from typing import Any
 
 from src.configurations import ApplicationConfiguration
 
 
-class CorrectorStrategy:
-
-    @classmethod
-    def correct(cls, fields: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError()
-
-
-class CourseCorrectorStrategy:
+class CourseCorrector:
 
     @staticmethod
     def correct(fields: dict[str, str]) -> dict[str, str | None]:
@@ -20,8 +12,8 @@ class CourseCorrectorStrategy:
         if course_name and re.search(ApplicationConfiguration.COURSE_CODES_REGEX, course_name):
             course_name_key = 'course_name_mk' if 'course_name_mk' in fields else 'course_name_en'
             fields.update({
-                'course_code': CourseCorrectorStrategy.extract_course_code(course_name),
-                course_name_key: CourseCorrectorStrategy.extract_course_name(course_name)
+                'course_code': CourseCorrector.extract_course_code(course_name),
+                course_name_key: CourseCorrector.extract_course_name(course_name)
             })
 
         return fields
