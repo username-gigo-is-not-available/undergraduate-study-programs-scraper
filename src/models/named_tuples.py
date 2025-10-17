@@ -8,7 +8,7 @@ CourseHeader = NamedTuple('CourseHeader', [
     ('course_url', str),
 ])
 
-CurriculumHeader = NamedTuple('CurriculumHeader', [
+Curriculum = NamedTuple('Curriculum', [
     ('study_program_name', str),
     ('study_program_duration', int),
     ('study_program_url', str),
@@ -19,7 +19,7 @@ CurriculumHeader = NamedTuple('CurriculumHeader', [
     ('course_type', str),
 ])
 
-CourseDetails = NamedTuple('CourseDetails', [
+Course = NamedTuple('Course', [
     ('course_code', str),
     ('course_name_mk', str),
     ('course_url', str),
