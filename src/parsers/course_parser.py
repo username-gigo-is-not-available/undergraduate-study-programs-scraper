@@ -8,16 +8,18 @@ from functools import partial
 from http import HTTPStatus
 from queue import Queue
 from ssl import SSLContext
+from typing import NamedTuple
 
-import aiohttp
 from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import DatasetConfiguration
-from src.models.named_tuples import CourseDetails, CourseHeader
+from src.models.named_tuples import Course, CourseHeader
+from src.network import HTTPClient
 from src.parsers.base_parser import Parser
 from src.parsers.curriculum_parser import CurriculumParser
-from src.patterns.strategy.corrector import CourseCorrectorStrategy
+from src.corrector import CourseCorrector
+from src.storage import IcebergClient
 
 
 class CourseParser(Parser):
@@ -38,11 +40,11 @@ class CourseParser(Parser):
     COURSES_DONE_EVENT: threading.Event = threading.Event()
     PROCESSED_COURSE_HEADERS: set[CourseHeader] = set()
 
-    def parse_row(self, *args, **kwargs) -> CourseDetails:
+    def parse_row(self, *args, **kwargs) -> Course:
         course_header: CourseHeader = kwargs.get('course_header')
         course_table: Tag = kwargs.get('element')
 
-        fields: dict[str, str] = CourseCorrectorStrategy.correct({
+        fields: dict[str, str] = CourseCorrector.correct({
             'course_name_en': self.extract_text(course_table, self.COURSE_NAME_EN_SELECTOR),
             'course_professors': self.extract_text(course_table, self.COURSE_PROFESSORS_SELECTOR),
             'course_prerequisites': self.extract_text(course_table, self.COURSE_PREREQUISITE_SELECTOR),
@@ -50,19 +52,23 @@ class CourseParser(Parser):
             'course_content': self.extract_text(course_table, self.COURSE_CONTENT_SELECTOR),
         })
 
-        course: CourseDetails = CourseDetails(**{**course_header._asdict(), **fields})
+        course: Course = Course(**{**course_header._asdict(), **fields})
         logging.info(f"Scraped course {course}")
         return course
 
-    def parse_data(self, *args, **kwargs) -> CourseDetails:
+    def parse_data(self, *args, **kwargs) -> Course:
         course_header: CourseHeader = kwargs.get('course_header')
         page_content: str = kwargs.get('page_content')
         soup: BeautifulSoup = Parser.get_parsed_html(page_content)
         course_table: Tag = soup.select_one(self.COURSE_TABLE_CLASS_NAME)
         return self.parse_row(course_header=course_header, element=course_table)
 
-    async def run(self, session: ClientSession, ssl_context: SSLContext, executor: Executor)  -> list[CourseDetails]:
-
+    async def run(self, session: ClientSession,
+                  ssl_context: SSLContext,
+                  dataset_configuration: DatasetConfiguration,
+                  http_client: HTTPClient,
+                  iceberg_client: IcebergClient,
+                  executor: Executor | None = None) -> list[NamedTuple]:
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
         await loop.run_in_executor(None, CurriculumParser.COURSE_HEADERS_READY_EVENT.wait)
         tasks: list[Task[tuple[int, str, CourseHeader]]] = []
@@ -78,7 +84,7 @@ class CourseParser(Parser):
 
             if course_header not in self.PROCESSED_COURSE_HEADERS:
                 tasks.append(asyncio.create_task(
-                    self.fetch_page_wrapper(session=session,
+                    http_client.fetch_page_wrapper(session=session,
                                             ssl_context=ssl_context,
                                             url=course_header.course_url,
                                             named_tuple=course_header,
@@ -97,9 +103,8 @@ class CourseParser(Parser):
             loop.run_in_executor(executor, partial(self.parse_data, course_header=course_header, page_content=page_content)))
 
         self.COURSES_DONE_EVENT.set()
-        courses: list[CourseDetails] = await asyncio.gather(
+        courses: list[Course] = await asyncio.gather(
             *[self.COURSES_QUEUE.get_nowait() for _ in range(self.COURSES_QUEUE.qsize())])  # type: ignore
-        logging.info(f"Finished processing {DatasetConfiguration.COURSES}")
-        await self.validate(courses, await self.load_schema(DatasetConfiguration.COURSES))
-        await self.save_data(courses, DatasetConfiguration.COURSES)
+        logging.info(f"Finished processing {dataset_configuration}")
+        await iceberg_client.save_data(courses, dataset_configuration)
         return courses

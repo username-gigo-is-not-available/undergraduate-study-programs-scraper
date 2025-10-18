@@ -1,11 +1,14 @@
 import os
 import re
 from pathlib import Path
-from dotenv import dotenv_values
 
-from src.models.enums import DatasetType
+from pyiceberg.schema import Schema
 
-ENVIRONMENT_VARIABLES: dict[str, str] = {**dotenv_values('../.env'), **os.environ}
+from src.models.enums import FileIOType
+from src.schemas.course_schema import COURSE_SCHEMA
+from src.schemas.curriculum_schema import CURRICULUM_SCHEMA
+from src.schemas.study_program_schema import STUDY_PROGRAM_SCHEMA
+from src.setup import ENVIRONMENT_VARIABLES
 
 
 class ApplicationConfiguration:
@@ -24,67 +27,36 @@ class ApplicationConfiguration:
 
 
 class StorageConfiguration:
-    FILE_STORAGE_TYPE: str = ENVIRONMENT_VARIABLES.get('FILE_STORAGE_TYPE')
-
-    MINIO_ENDPOINT_URL: str = ENVIRONMENT_VARIABLES.get('MINIO_ENDPOINT_URL')
-    MINIO_ACCESS_KEY: str = ENVIRONMENT_VARIABLES.get('MINIO_ACCESS_KEY')
-    MINIO_SECRET_KEY: str = ENVIRONMENT_VARIABLES.get('MINIO_SECRET_KEY')
-    MINIO_OUTPUT_DATA_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_OUTPUT_DATA_BUCKET_NAME')
-    MINIO_SCHEMA_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('MINIO_SCHEMA_BUCKET_NAME')
-    # MINIO_SECURE_CONNECTION: bool = bool(ENVIRONMENT_VARIABLES.get('MINIO_SECURE_CONNECTION'))
-
-    OUTPUT_DATA_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('OUTPUT_DATA_DIRECTORY_PATH', '..'))
-    SCHEMA_DIRECTORY_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('SCHEMA_DIRECTORY_PATH', '..'))
-
-
-class PathConfiguration:
-    STUDY_PROGRAMS_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME'))
-    CURRICULA_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_DATA_OUTPUT_FILE_NAME'))
-    COURSES_OUTPUT_DATA: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_DATA_OUTPUT_FILE_NAME'))
-
-    STUDY_PROGRAMS_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('STUDY_PROGRAMS_SCHEMA_FILE_NAME'))
-    CURRICULA_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('CURRICULA_SCHEMA_FILE_NAME'))
-    COURSES_SCHEMA: Path = Path(ENVIRONMENT_VARIABLES.get('COURSES_SCHEMA_FILE_NAME'))
-
-
-class DatasetIOConfiguration:
-    def __init__(self, file_name: str | Path):
-        self.file_name = file_name
+    FILE_IO_TYPE: FileIOType = FileIOType(ENVIRONMENT_VARIABLES.get('FILE_IO_TYPE').upper())
+    LOCAL_ICEBERG_LAKEHOUSE_FILE_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('LOCAL_ICEBERG_LAKEHOUSE_FILE_PATH'))
+    S3_ENDPOINT_URL: str = ENVIRONMENT_VARIABLES.get('S3_ENDPOINT_URL')
+    S3_ACCESS_KEY: str = ENVIRONMENT_VARIABLES.get('S3_ACCESS_KEY')
+    S3_SECRET_KEY: str = ENVIRONMENT_VARIABLES.get('S3_SECRET_KEY')
+    S3_ICEBERG_LAKEHOUSE_BUCKET_NAME: str = ENVIRONMENT_VARIABLES.get('S3_ICEBERG_LAKEHOUSE_BUCKET_NAME')
+    S3_PATH_STYLE_ACCESS: bool = ENVIRONMENT_VARIABLES.get('S3_PATH_STYLE_ACCESS')
+    ICEBERG_CATALOG_NAME: str = ENVIRONMENT_VARIABLES.get("ICEBERG_CATALOG_NAME")
+    ICEBERG_NAMESPACE: str = ENVIRONMENT_VARIABLES.get("ICEBERG_NAMESPACE")
 
 class DatasetConfiguration:
-    STUDY_PROGRAMS: "DatasetConfiguration"
-    CURRICULA: "DatasetConfiguration"
-    COURSES: "DatasetConfiguration"
-
-    def __init__(self,
-                 dataset: DatasetType,
-                 output_io_configuration: DatasetIOConfiguration,
-                 schema_configuration: DatasetIOConfiguration,
-                 ):
-        self.dataset_name = dataset
-        self.output_io_configuration = output_io_configuration
-        self.schema_configuration = schema_configuration
+    def __init__(self, dataset_name: str, schema: Schema):
+        self.dataset_name = dataset_name
+        self.schema = schema
 
     def __str__(self):
         return self.dataset_name
 
 
-DatasetConfiguration.STUDY_PROGRAMS = DatasetConfiguration(DatasetType.STUDY_PROGRAMS,
-                                                           DatasetIOConfiguration(
-                                                               PathConfiguration.STUDY_PROGRAMS_OUTPUT_DATA),
-                                                           DatasetIOConfiguration(
-                                                               PathConfiguration.STUDY_PROGRAMS_SCHEMA),
-                                                           )
-DatasetConfiguration.COURSES = DatasetConfiguration(DatasetType.COURSES,
-                                                    DatasetIOConfiguration(
-                                                        PathConfiguration.COURSES_OUTPUT_DATA),
-                                                    DatasetIOConfiguration(
-                                                        PathConfiguration.COURSES_SCHEMA),
+STUDY_PROGRAMS_DATASET_CONFIGURATION = DatasetConfiguration(
+    dataset_name=ENVIRONMENT_VARIABLES.get("STUDY_PROGRAMS_DATASET_NAME"),
+    schema=STUDY_PROGRAM_SCHEMA,
+)
 
-                                                    )
-DatasetConfiguration.CURRICULA = DatasetConfiguration(DatasetType.CURRICULA,
-                                                      DatasetIOConfiguration(
-                                                          PathConfiguration.CURRICULA_OUTPUT_DATA),
-                                                      DatasetIOConfiguration(
-                                                          PathConfiguration.CURRICULA_SCHEMA),
-                                                      )
+CURRICULA_DATASET_CONFIGURATION = DatasetConfiguration(
+    dataset_name=ENVIRONMENT_VARIABLES.get("CURRICULA_DATASET_NAME"),
+    schema=CURRICULUM_SCHEMA,
+)
+
+COURSES_DATASET_CONFIGURATION = DatasetConfiguration(
+    dataset_name=ENVIRONMENT_VARIABLES.get("COURSES_DATASET_NAME"),
+    schema=COURSE_SCHEMA,
+)

@@ -1,14 +1,17 @@
+from abc import abstractmethod
+from concurrent.futures import Executor
+from ssl import SSLContext
 from typing import NamedTuple
 
+from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import ApplicationConfiguration
-from src.patterns.mixin.storage import StorageMixin
-from src.patterns.mixin.http_client import HTTPClientMixin
-from src.patterns.mixin.validation import SchemaValidationMixin
+from src.configurations import ApplicationConfiguration, DatasetConfiguration
+from src.network import HTTPClient
+from src.storage import IcebergClient
 
 
-class Parser(StorageMixin, HTTPClientMixin, SchemaValidationMixin):
+class Parser:
 
     @classmethod
     async def parse_row(cls, *args, **kwargs) -> NamedTuple:
@@ -30,3 +33,11 @@ class Parser(StorageMixin, HTTPClientMixin, SchemaValidationMixin):
     def extract_url(cls, tag: Tag, selector: str) -> str:
         return ''.join([ApplicationConfiguration.BASE_URL, tag.select_one(selector)['href']])
 
+    @abstractmethod
+    async def run(self, session: ClientSession,
+                  ssl_context: SSLContext,
+                  dataset_configuration: DatasetConfiguration,
+                  http_client: HTTPClient,
+                  iceberg_client: IcebergClient,
+                  executor: Executor | None = None) -> list[NamedTuple]:
+        raise NotImplementedError("Subclasses must implement the run() method.")

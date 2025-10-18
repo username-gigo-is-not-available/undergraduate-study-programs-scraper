@@ -1,17 +1,19 @@
 import asyncio
 import logging
 import queue
-import threading
+from concurrent.futures import Executor
 from http import HTTPStatus
 from ssl import SSLContext
-from typing import List
+from typing import List, NamedTuple
 
 from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import DatasetConfiguration, ApplicationConfiguration
 from src.models.named_tuples import StudyProgram
+from src.network import HTTPClient
 from src.parsers.base_parser import Parser
+from src.storage import IcebergClient
 
 
 class StudyProgramParser(Parser):
@@ -47,11 +49,17 @@ class StudyProgramParser(Parser):
 
         return list(filter(is_macedonian_study_program, study_programs))
 
-    async def run(self, session: ClientSession, ssl_context: SSLContext) -> list[StudyProgram]:
-        http_status, page_content= await self.fetch_page(session=session,
-                                          ssl_context=ssl_context,
-                                          url=ApplicationConfiguration.STUDY_PROGRAMS_URL,
-                                          )
+    async def run(self, session: ClientSession,
+                  ssl_context: SSLContext,
+                  dataset_configuration: DatasetConfiguration,
+                  http_client: HTTPClient,
+                  iceberg_client: IcebergClient,
+                  executor: Executor | None = None) -> list[NamedTuple]:
+
+        http_status, page_content = await http_client.fetch_page(session=session,
+                                              ssl_context=ssl_context,
+                                              url=ApplicationConfiguration.STUDY_PROGRAMS_URL,
+                                              )
         if http_status != HTTPStatus.OK:
             logging.error(
                 f"Tried to fetch {ApplicationConfiguration.STUDY_PROGRAMS_URL} but got HTTP status: {http_status}"
@@ -63,7 +71,6 @@ class StudyProgramParser(Parser):
             self.STUDY_PROGRAMS_QUEUE.put_nowait(study_program)
             if not self.STUDY_PROGRAMS_READY_EVENT.is_set():
                 self.STUDY_PROGRAMS_READY_EVENT.set()
-        logging.info(f"Finished processing {DatasetConfiguration.STUDY_PROGRAMS}")
-        await self.validate(study_programs, await self.load_schema(DatasetConfiguration.STUDY_PROGRAMS))
-        await self.save_data(study_programs, DatasetConfiguration.STUDY_PROGRAMS)
+        logging.info(f"Finished processing {dataset_configuration}")
+        await iceberg_client.save_data(study_programs, dataset_configuration)
         return study_programs
