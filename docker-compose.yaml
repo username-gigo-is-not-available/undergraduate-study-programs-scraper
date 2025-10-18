@@ -1,0 +1,60 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 20s
+      retries: 3
+    networks:
+      iceberg:
+
+
+  iceberg-rest:
+    image: apache/iceberg-rest-fixture
+    container_name: iceberg-rest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      AWS_REGION: us-east-1
+      CATALOG_WAREHOUSE: s3://${S3_ICEBERG_LAKEHOUSE_BUCKET_NAME}
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://minio:9000
+      CATALOG_S3_PATH__STYLE__ACCESS: true
+    ports:
+      - "8181:8181"
+    networks:
+      iceberg:
+
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper
+    depends_on:
+      - minio
+      - iceberg-rest
+    env_file:
+      - .env
+    networks:
+      iceberg:
+
+volumes:
+  minio-data:
+
+networks:
+  iceberg:
+    driver: bridge

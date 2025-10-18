@@ -1,0 +1,18 @@
+# Rest catalog example
+catalog:
+  default:
+    type: rest
+    uri:
+    s3.endpoint:
+    s3.access-key-id:
+    s3.secret-access-key:
+    s3.path-style-access:
+    s3.resolve-region:
+    s3.region:
+    warehouse:
+# SQL catalog example
+catalog:
+  default:
+    type: sql
+    uri:
+    warehouse:
