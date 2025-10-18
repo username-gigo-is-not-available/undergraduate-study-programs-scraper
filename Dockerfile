@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM python:3.13.5-slim AS builder
+FROM python:3.14.0-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -15,7 +15,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.13.5-slim
+FROM python:3.14.0-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
