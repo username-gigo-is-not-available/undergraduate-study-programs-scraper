@@ -32,8 +32,9 @@ WORKDIR /undergraduate-study-programs-scraper
 COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-COPY ./src ./src
-
 ENV PYTHONPATH=/undergraduate-study-programs-scraper
+
+COPY ./src ./src
+COPY .pyiceberg.yaml .
 
 CMD ["python", "src/main.py"]
