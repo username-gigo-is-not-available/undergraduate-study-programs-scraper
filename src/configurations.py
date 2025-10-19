@@ -46,17 +46,17 @@ class DatasetConfiguration:
         return self.dataset_name
 
 
-STUDY_PROGRAMS_DATASET_CONFIGURATION = DatasetConfiguration(
+STUDY_PROGRAMS_DATASET_CONFIGURATION: DatasetConfiguration = DatasetConfiguration(
     dataset_name=ENVIRONMENT_VARIABLES.get("STUDY_PROGRAMS_DATASET_NAME"),
     schema=STUDY_PROGRAM_SCHEMA,
 )
 
-CURRICULA_DATASET_CONFIGURATION = DatasetConfiguration(
+CURRICULA_DATASET_CONFIGURATION: DatasetConfiguration = DatasetConfiguration(
     dataset_name=ENVIRONMENT_VARIABLES.get("CURRICULA_DATASET_NAME"),
     schema=CURRICULUM_SCHEMA,
 )
 
-COURSES_DATASET_CONFIGURATION = DatasetConfiguration(
+COURSES_DATASET_CONFIGURATION: DatasetConfiguration = DatasetConfiguration(
     dataset_name=ENVIRONMENT_VARIABLES.get("COURSES_DATASET_NAME"),
     schema=COURSE_SCHEMA,
 )
