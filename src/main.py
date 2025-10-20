@@ -16,7 +16,7 @@ from src.parsers.curriculum_parser import CurriculumParser
 from src.parsers.study_program_parser import StudyProgramParser
 from src.storage import IcebergClient
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, force=True)
 
 
 async def main():
