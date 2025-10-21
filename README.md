@@ -5,6 +5,12 @@ The scraper is used to scrape the study programs and related courses from the **
 The application uses **Python**, **aiohttp** for asynchronous networking, **multithreading** for parallel processing and **PyIceberg** for lakehouse data storage.
 
 ---
+## Requirements
+
+- **Python 3.9 or later**
+- Access to an **Iceberg Catalog** and **MinIO server** (for S3 storage) or local disk space (for local storage).
+
+---
 
 ## Data Output
 
@@ -15,13 +21,6 @@ The scraper saves the data into an **Apache Iceberg lakehouse** structure within
 | `study_programs` | Contains the core details of the undergraduate study programs. |
 | `curriculum` | Contains the mapping and details linking study programs to their associated courses. |
 | `courses` | Contains the full descriptive details of each individual course. |
-
----
-
-## Requirements
-
-- **Python 3.9 or later**
-- Access to a **MinIO server** (for S3 storage) or local disk space (for local storage).
 
 ---
 
@@ -37,11 +36,10 @@ The scraper saves the data into an **Apache Iceberg lakehouse** structure within
     pip install -r requirements.txt
     ```
 
-3.  **Create `.env` File**
-    Create a file named `.env` in the project root and populate it with the necessary variables defined below.
-
-4. **Create `.pyiceberg.yaml` File**
-    Create a file named `.pyiceberg.yaml` in the project root and populate it with the necessary variables defined below.
+3. **Configuration Files**
+   Ensure you have the necessary environment configuration. This typically involves:
+    * A **`.env`** file for environment variables.
+    * A **`.pyiceberg.yaml`** file for Iceberg catalog configuration.
 
 ---
 
@@ -49,24 +47,26 @@ The scraper saves the data into an **Apache Iceberg lakehouse** structure within
 
 The application is configured using environment variables, which must be sourced before execution.
 
-### General & Scraper Configuration
+### General Configuration
 
 | Variable | Description                                                                                                                                                       |
 | :--- |:------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `FILE_IO_TYPE` | The type of storage that will be used. Must be **"LOCAL"** or **"S3"**.                                                                                           |
+
+### Scraper Configuration
+| Variable | Description                                                                                                                                                       |
+| :--- |:------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `NUMBER_OF_THREADS` | The maximum number of threads used for thread-intensive operations (e.g., parsing HTML).<br/> Set to `-1` to use maximum number of threads (`number of CPU cores * 5`) |
 | `REQUEST_TIMEOUT_SECONDS` | Maximum wait time for a single HTTP request in seconds before timing out.                                                                                         |
 | `REQUESTS_RETRY_COUNT` | The number of times an HTTP request will be retried if it fails.                                                                                                  |
 | `REQUESTS_RETRY_DELAY_SECONDS` | The wait delay in seconds between failed HTTP request retries.                                                                                                    |
-| `STUDY_PROGRAMS_DATA_OUTPUT_FILE_NAME` | The base file name for the study programs data (e.g., `study_programs`).                                                                                          |
-| `CURRICULUM_DATA_OUTPUT_FILE_NAME` | The base file name for the curriculum data (e.g., `curriculum`).                                                                                                  |
-| `COURSES_DATA_OUTPUT_FILE_NAME` | The base file name for the courses data (e.g., `courses`).                                                                                                        |
 
 ### Iceberg Configuration (Metastore)
 
-| Variable | Description |
-| :--- | :--- |
-| `ICEBERG_CATALOG_NAME` | The name of the catalog configuration to load (e.g., `default`). This determines the metastore type (e.g., SQL/SQLite). |
+| Variable | Description                                                                                                       |
+| :--- |:------------------------------------------------------------------------------------------------------------------|
+| `PYICEBERG_HOME` | The internal path where the application is executed (e.g., `/undergraduate-study-programs-scraper`).              |
+| `ICEBERG_CATALOG_NAME` | The name of the catalog configuration (e.g., `default`) used to connect to the metastore.                         |
 | `ICEBERG_NAMESPACE` | The logical grouping (schema/database) within the Iceberg catalog where the tables will be created (e.g., `raw`). |
 
 ### Storage-Specific Configuration
@@ -86,6 +86,17 @@ The application is configured using environment variables, which must be sourced
 | `S3_SECRET_KEY` | The secret access key required for MinIO authentication. |
 | `S3_ICEBERG_LAKEHOUSE_BUCKET_NAME` | The name of the S3 bucket that will host the Iceberg warehouse (e.g., `finki-warehouse`). |
 | `S3_PATH_STYLE_ACCESS` | Boolean flag (`True`/`False`) indicating whether to use path-style addressing (required for MinIO or custom S3 endpoints). |
+
+
+### Dataset Naming Configuration
+
+These variables allow flexibility in naming the 10 resulting Iceberg tables:
+
+| Variable                      | Description                                                       |
+|:------------------------------|:------------------------------------------------------------------|
+| `STUDY_PROGRAMS_DATASET_NAME` | Output table name for study programs (e.g., `study_programs`).    |
+| `COURSES_DATASET_NAME`        | Output table name for courses (e.g., `courses`).                  |
+| `CURRICULA_DATASET_NAME`      | Output table name for curriculum details (e.g., `curricula`).     |
 
 ---
 
