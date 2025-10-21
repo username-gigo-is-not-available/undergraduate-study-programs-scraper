@@ -9,7 +9,7 @@ from typing import List, NamedTuple
 from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import DatasetConfiguration, ApplicationConfiguration
+from src.configurations import ApplicationConfiguration, IcebergTableConfiguration
 from src.models.named_tuples import StudyProgram
 from src.network import HTTPClient
 from src.parsers.base_parser import Parser
@@ -51,7 +51,7 @@ class StudyProgramParser(Parser):
 
     async def run(self, session: ClientSession,
                   ssl_context: SSLContext,
-                  dataset_configuration: DatasetConfiguration,
+                  iceberg_configuration: IcebergTableConfiguration,
                   http_client: HTTPClient,
                   iceberg_client: IcebergClient,
                   executor: Executor | None = None) -> list[NamedTuple]:
@@ -71,6 +71,6 @@ class StudyProgramParser(Parser):
             self.STUDY_PROGRAMS_QUEUE.put_nowait(study_program)
             if not self.STUDY_PROGRAMS_READY_EVENT.is_set():
                 self.STUDY_PROGRAMS_READY_EVENT.set()
-        logging.info(f"Finished processing {dataset_configuration}")
-        await iceberg_client.save_data(study_programs, dataset_configuration)
+        logging.info(f"Finished processing {iceberg_configuration}")
+        await iceberg_client.save_data(study_programs, iceberg_configuration)
         return study_programs

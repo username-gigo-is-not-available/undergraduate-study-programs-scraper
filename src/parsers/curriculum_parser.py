@@ -12,7 +12,7 @@ from typing import NamedTuple
 from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import DatasetConfiguration
+from src.configurations import IcebergTableConfiguration
 from src.models.enums import CourseType
 from src.models.named_tuples import Curriculum, StudyProgram, CourseHeader
 from src.network import HTTPClient
@@ -102,7 +102,7 @@ class CurriculumParser(Parser):
 
     async def run(self, session: ClientSession,
                   ssl_context: SSLContext,
-                  dataset_configuration: DatasetConfiguration,
+                  iceberg_configuration: IcebergTableConfiguration,
                   http_client: HTTPClient,
                   iceberg_client: IcebergClient,
                   executor: Executor | None = None) -> list[NamedTuple]:
@@ -132,6 +132,6 @@ class CurriculumParser(Parser):
             *[self.CURRICULA_QUEUE.get_nowait() for _ in range(self.CURRICULA_QUEUE.qsize())])  # type: ignore
         self.CURRICULA_DONE_EVENT.set()
         curricula: list[Curriculum] = reduce(lambda x, y: x + y, nested_curricula)
-        logging.info(f"Finished processing {dataset_configuration}")
-        await iceberg_client.save_data(curricula, dataset_configuration)
+        logging.info(f"Finished processing {iceberg_configuration}")
+        await iceberg_client.save_data(curricula, iceberg_configuration)
         return curricula

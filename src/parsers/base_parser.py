@@ -6,7 +6,7 @@ from typing import NamedTuple
 from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import ApplicationConfiguration, DatasetConfiguration
+from src.configurations import ApplicationConfiguration, IcebergTableConfiguration
 from src.network import HTTPClient
 from src.storage import IcebergClient
 
@@ -36,7 +36,7 @@ class Parser:
     @abstractmethod
     async def run(self, session: ClientSession,
                   ssl_context: SSLContext,
-                  dataset_configuration: DatasetConfiguration,
+                  iceberg_configuration: IcebergTableConfiguration,
                   http_client: HTTPClient,
                   iceberg_client: IcebergClient,
                   executor: Executor | None = None) -> list[NamedTuple]:

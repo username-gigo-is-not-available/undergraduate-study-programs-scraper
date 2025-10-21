@@ -5,7 +5,7 @@ from pyiceberg.catalog import load_catalog, Catalog
 from miniopy_async import Minio
 from pyiceberg.table import Table
 
-from src.configurations import StorageConfiguration, DatasetConfiguration
+from src.configurations import StorageConfiguration, IcebergTableConfiguration
 import pyarrow as pa
 
 from src.models.enums import FileIOType
@@ -46,16 +46,16 @@ class IcebergClient:
     def get_table_identifier(cls,  namespace: str, table_name: str) -> str:
         return f"{namespace}.{table_name}"
 
-    async def save_data(self, data: list[NamedTuple], dataset_configuration: DatasetConfiguration) -> list[dict[str, Any]]:
+    async def save_data(self, data: list[NamedTuple], iceberg_configuration: IcebergTableConfiguration) -> list[dict[str, Any]]:
         catalog: Catalog = self.get_catalog()
 
         data: list[dict[str, Any]] = [row._asdict() for row in data]
-        table_identifier: str = self.get_table_identifier(StorageConfiguration.ICEBERG_NAMESPACE, dataset_configuration.dataset_name)
+        table_identifier: str = self.get_table_identifier(StorageConfiguration.ICEBERG_NAMESPACE, iceberg_configuration.table_name)
         table: Table = catalog.load_table(table_identifier)
 
-        logging.info(f"Saving data to {table_identifier} with schema {dataset_configuration.schema} and {len(data)} rows")
+        logging.info(f"Saving data to {table_identifier} with schema {iceberg_configuration.schema} and {len(data)} rows")
 
-        table.append(pa.Table.from_pylist(mapping=data, schema=dataset_configuration.schema.as_arrow()))
+        table.append(pa.Table.from_pylist(mapping=data, schema=iceberg_configuration.schema.as_arrow()))
 
         logging.info(f"Created snapshot_id: {table.current_snapshot().snapshot_id} for table {table_identifier}")
         return data

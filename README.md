@@ -88,15 +88,15 @@ The application is configured using environment variables, which must be sourced
 | `S3_PATH_STYLE_ACCESS` | Boolean flag (`True`/`False`) indicating whether to use path-style addressing (required for MinIO or custom S3 endpoints). |
 
 
-### Dataset Naming Configuration
+### Table Naming Configuration
 
-These variables allow flexibility in naming the 10 resulting Iceberg tables:
+These variables allow flexibility in naming the 3 resulting Iceberg tables:
 
-| Variable                      | Description                                                       |
-|:------------------------------|:------------------------------------------------------------------|
-| `STUDY_PROGRAMS_DATASET_NAME` | Output table name for study programs (e.g., `study_programs`).    |
-| `COURSES_DATASET_NAME`        | Output table name for courses (e.g., `courses`).                  |
-| `CURRICULA_DATASET_NAME`      | Output table name for curriculum details (e.g., `curricula`).     |
+| Variable                    | Description                                                       |
+|:----------------------------|:------------------------------------------------------------------|
+| `STUDY_PROGRAMS_TABLE_NAME` | Output table name for study programs (e.g., `study_programs`).    |
+| `COURSES_TABLE_NAME`        | Output table name for courses (e.g., `courses`).                  |
+| `CURRICULA_TABLE_NAME`      | Output table name for curriculum details (e.g., `curricula`).     |
 
 ---
 

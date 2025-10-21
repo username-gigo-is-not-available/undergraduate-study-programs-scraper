@@ -5,8 +5,7 @@ import src.setup
 from pyiceberg.schema import Schema
 from pyiceberg.catalog import Catalog
 
-from src.configurations import StorageConfiguration, STUDY_PROGRAMS_DATASET_CONFIGURATION, \
-    CURRICULA_DATASET_CONFIGURATION, COURSES_DATASET_CONFIGURATION
+from src.configurations import StorageConfiguration
 from src.models.enums import FileIOType
 from src.storage import IcebergClient
 
@@ -40,13 +39,13 @@ async def initialize():
     catalog.create_namespace_if_not_exists(namespace)
 
     datasets = [
-        STUDY_PROGRAMS_DATASET_CONFIGURATION,
-        CURRICULA_DATASET_CONFIGURATION,
-        COURSES_DATASET_CONFIGURATION
+        StorageConfiguration.STUDY_PROGRAMS,
+        StorageConfiguration.CURRICULA,
+        StorageConfiguration.COURSES,
     ]
 
     for dataset in datasets:
-        table_identifier: str = iceberg_client.get_table_identifier(namespace, dataset.dataset_name)
+        table_identifier: str = iceberg_client.get_table_identifier(namespace, dataset.table_name)
         schema: Schema = dataset.schema
         logging.info(f"Creating table '{table_identifier}'")
         catalog.create_table_if_not_exists(table_identifier, schema)

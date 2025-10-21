@@ -1,5 +1,6 @@
 import os
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from pyiceberg.schema import Schema
@@ -10,6 +11,13 @@ from src.schemas.curriculum_schema import CURRICULUM_SCHEMA
 from src.schemas.study_program_schema import STUDY_PROGRAM_SCHEMA
 from src.setup import ENVIRONMENT_VARIABLES
 
+@dataclass(frozen=True)
+class IcebergTableConfiguration:
+    table_name: str
+    schema: Schema
+
+    def __str__(self):
+        return self.table_name
 
 class ApplicationConfiguration:
     BASE_URL: str = "https://finki.ukim.mk"
@@ -26,6 +34,7 @@ class ApplicationConfiguration:
     REQUESTS_RETRY_DELAY_SECONDS: float = float(ENVIRONMENT_VARIABLES.get("REQUESTS_RETRY_DELAY_SECONDS"))
 
 
+
 class StorageConfiguration:
     FILE_IO_TYPE: FileIOType = FileIOType(ENVIRONMENT_VARIABLES.get('FILE_IO_TYPE').upper())
     LOCAL_ICEBERG_LAKEHOUSE_FILE_PATH: Path = Path(ENVIRONMENT_VARIABLES.get('LOCAL_ICEBERG_LAKEHOUSE_FILE_PATH'))
@@ -37,26 +46,17 @@ class StorageConfiguration:
     ICEBERG_CATALOG_NAME: str = ENVIRONMENT_VARIABLES.get("ICEBERG_CATALOG_NAME")
     ICEBERG_NAMESPACE: str = ENVIRONMENT_VARIABLES.get("ICEBERG_NAMESPACE")
 
-class DatasetConfiguration:
-    def __init__(self, dataset_name: str, schema: Schema):
-        self.dataset_name = dataset_name
-        self.schema = schema
+    STUDY_PROGRAMS: IcebergTableConfiguration = IcebergTableConfiguration(
+        table_name=ENVIRONMENT_VARIABLES.get("STUDY_PROGRAMS_DATASET_NAME", "study_programs"),
+        schema=STUDY_PROGRAM_SCHEMA,
+    )
 
-    def __str__(self):
-        return self.dataset_name
+    CURRICULA: IcebergTableConfiguration = IcebergTableConfiguration(
+        table_name=ENVIRONMENT_VARIABLES.get("CURRICULA_DATASET_NAME", "curricula"),
+        schema=CURRICULUM_SCHEMA,
+    )
 
-
-STUDY_PROGRAMS_DATASET_CONFIGURATION: DatasetConfiguration = DatasetConfiguration(
-    dataset_name=ENVIRONMENT_VARIABLES.get("STUDY_PROGRAMS_DATASET_NAME"),
-    schema=STUDY_PROGRAM_SCHEMA,
-)
-
-CURRICULA_DATASET_CONFIGURATION: DatasetConfiguration = DatasetConfiguration(
-    dataset_name=ENVIRONMENT_VARIABLES.get("CURRICULA_DATASET_NAME"),
-    schema=CURRICULUM_SCHEMA,
-)
-
-COURSES_DATASET_CONFIGURATION: DatasetConfiguration = DatasetConfiguration(
-    dataset_name=ENVIRONMENT_VARIABLES.get("COURSES_DATASET_NAME"),
-    schema=COURSE_SCHEMA,
-)
+    COURSES: IcebergTableConfiguration = IcebergTableConfiguration(
+        table_name=ENVIRONMENT_VARIABLES.get("COURSES_DATASET_NAME", "courses"),
+        schema=COURSE_SCHEMA,
+    )
