@@ -12,7 +12,7 @@ from src.schemas.study_program_schema import STUDY_PROGRAM_SCHEMA
 from src.setup import ENVIRONMENT_VARIABLES
 
 @dataclass(frozen=True)
-class IcebergTableConfiguration:
+class TableConfiguration:
     table_name: str
     schema: Schema
 
@@ -46,17 +46,17 @@ class StorageConfiguration:
     ICEBERG_CATALOG_NAME: str = ENVIRONMENT_VARIABLES.get("ICEBERG_CATALOG_NAME")
     ICEBERG_NAMESPACE: str = ENVIRONMENT_VARIABLES.get("ICEBERG_NAMESPACE")
 
-    STUDY_PROGRAMS: IcebergTableConfiguration = IcebergTableConfiguration(
-        table_name=ENVIRONMENT_VARIABLES.get("STUDY_PROGRAMS_DATASET_NAME", "study_programs"),
-        schema=STUDY_PROGRAM_SCHEMA,
-    )
+STUDY_PROGRAMS: TableConfiguration = TableConfiguration(
+    table_name=ENVIRONMENT_VARIABLES.get("STUDY_PROGRAMS_DATASET_NAME", "study_programs"),
+    schema=STUDY_PROGRAM_SCHEMA,
+)
 
-    CURRICULA: IcebergTableConfiguration = IcebergTableConfiguration(
-        table_name=ENVIRONMENT_VARIABLES.get("CURRICULA_DATASET_NAME", "curricula"),
-        schema=CURRICULUM_SCHEMA,
-    )
+CURRICULA: TableConfiguration = TableConfiguration(
+    table_name=ENVIRONMENT_VARIABLES.get("CURRICULA_DATASET_NAME", "curricula"),
+    schema=CURRICULUM_SCHEMA,
+)
 
-    COURSES: IcebergTableConfiguration = IcebergTableConfiguration(
-        table_name=ENVIRONMENT_VARIABLES.get("COURSES_DATASET_NAME", "courses"),
-        schema=COURSE_SCHEMA,
-    )
+COURSES: TableConfiguration = TableConfiguration(
+    table_name=ENVIRONMENT_VARIABLES.get("COURSES_DATASET_NAME", "courses"),
+    schema=COURSE_SCHEMA,
+)

@@ -3,7 +3,7 @@ import logging
 import ssl
 import time
 import src.setup
-from src.configurations import StorageConfiguration, ApplicationConfiguration
+from src.configurations import StorageConfiguration, ApplicationConfiguration, COURSES, CURRICULA, STUDY_PROGRAMS
 from src.initialization import initialize
 from concurrent.futures import ThreadPoolExecutor
 import certifi
@@ -28,21 +28,21 @@ async def main():
     iceberg_client: IcebergClient = IcebergClient()
     tasks: list[asyncio.Task] = [asyncio.create_task(StudyProgramParser().run(session=session,
                                                                               ssl_context=ssl_context,
-                                                                              iceberg_configuration=StorageConfiguration.STUDY_PROGRAMS,
+                                                                              iceberg_configuration=STUDY_PROGRAMS,
                                                                               http_client=http_client,
                                                                               iceberg_client=iceberg_client))]
     with ThreadPoolExecutor(max_workers=ApplicationConfiguration.NUMBER_OF_THREADS) as executor:
         tasks.append(asyncio.create_task(CurriculumParser().run(session=session,
                                                                 ssl_context=ssl_context,
                                                                 executor=executor,
-                                                                iceberg_configuration=StorageConfiguration.CURRICULA,
+                                                                iceberg_configuration=CURRICULA,
                                                                 http_client=http_client,
                                                                 iceberg_client=iceberg_client
                                                                 )))
         tasks.append(asyncio.create_task(CourseParser().run(session=session,
                                                             ssl_context=ssl_context,
                                                             executor=executor,
-                                                            iceberg_configuration=StorageConfiguration.COURSES,
+                                                            iceberg_configuration=COURSES,
                                                             http_client=http_client,
                                                             iceberg_client=iceberg_client)))
         await asyncio.gather(*tasks)

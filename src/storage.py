@@ -5,7 +5,7 @@ from pyiceberg.catalog import load_catalog, Catalog
 from miniopy_async import Minio
 from pyiceberg.table import Table
 
-from src.configurations import StorageConfiguration, IcebergTableConfiguration
+from src.configurations import StorageConfiguration, TableConfiguration
 import pyarrow as pa
 
 from src.models.enums import FileIOType
@@ -46,7 +46,7 @@ class IcebergClient:
     def get_table_identifier(cls,  namespace: str, table_name: str) -> str:
         return f"{namespace}.{table_name}"
 
-    async def save_data(self, data: list[NamedTuple], iceberg_configuration: IcebergTableConfiguration) -> list[dict[str, Any]]:
+    async def save_data(self, data: list[NamedTuple], iceberg_configuration: TableConfiguration) -> list[dict[str, Any]]:
         catalog: Catalog = self.get_catalog()
 
         data: list[dict[str, Any]] = [row._asdict() for row in data]

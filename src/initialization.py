@@ -5,7 +5,7 @@ import src.setup
 from pyiceberg.schema import Schema
 from pyiceberg.catalog import Catalog
 
-from src.configurations import StorageConfiguration
+from src.configurations import StorageConfiguration, COURSES, CURRICULA, STUDY_PROGRAMS, TableConfiguration
 from src.models.enums import FileIOType
 from src.storage import IcebergClient
 
@@ -38,10 +38,10 @@ async def initialize():
     logging.info(f"Creating namespace '{namespace}'")
     catalog.create_namespace_if_not_exists(namespace)
 
-    datasets = [
-        StorageConfiguration.STUDY_PROGRAMS,
-        StorageConfiguration.CURRICULA,
-        StorageConfiguration.COURSES,
+    datasets: list[TableConfiguration] = [
+        STUDY_PROGRAMS,
+        CURRICULA,
+        COURSES,
     ]
 
     for dataset in datasets:

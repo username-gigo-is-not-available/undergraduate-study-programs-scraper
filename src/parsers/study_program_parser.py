@@ -9,7 +9,7 @@ from typing import List, NamedTuple
 from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import ApplicationConfiguration, IcebergTableConfiguration
+from src.configurations import ApplicationConfiguration, TableConfiguration
 from src.models.named_tuples import StudyProgram
 from src.network import HTTPClient
 from src.parsers.base_parser import Parser
@@ -51,7 +51,7 @@ class StudyProgramParser(Parser):
 
     async def run(self, session: ClientSession,
                   ssl_context: SSLContext,
-                  iceberg_configuration: IcebergTableConfiguration,
+                  iceberg_configuration: TableConfiguration,
                   http_client: HTTPClient,
                   iceberg_client: IcebergClient,
                   executor: Executor | None = None) -> list[NamedTuple]:
