@@ -1,14 +1,15 @@
 import logging
-from typing import NamedTuple, Any
+from dataclasses import asdict
+from typing import Any
 
-from pyiceberg.catalog import load_catalog, Catalog
+import pyarrow as pa
 from miniopy_async import Minio
+from pyiceberg.catalog import load_catalog, Catalog
 from pyiceberg.table import Table
 
 from src.configurations import StorageConfiguration, TableConfiguration
-import pyarrow as pa
-
 from src.models.enums import FileIOType
+from src.models.types import Record
 
 
 class IcebergClient:
@@ -46,16 +47,19 @@ class IcebergClient:
     def get_table_identifier(cls,  namespace: str, table_name: str) -> str:
         return f"{namespace}.{table_name}"
 
-    async def save_data(self, data: list[NamedTuple], iceberg_configuration: TableConfiguration) -> list[dict[str, Any]]:
+    @classmethod
+    def to_arrow(cls, data: list[Record], iceberg_configuration: TableConfiguration) -> pa.Table:
+        return pa.Table.from_pylist(mapping=([asdict(row) for row in data]), schema=iceberg_configuration.schema.as_arrow())
+
+    async def save_data(self, data: list[Record], iceberg_configuration: TableConfiguration) -> list[dict[str, Any]]:
         catalog: Catalog = self.get_catalog()
 
-        data: list[dict[str, Any]] = [row._asdict() for row in data]
         table_identifier: str = self.get_table_identifier(StorageConfiguration.ICEBERG_NAMESPACE, iceberg_configuration.table_name)
         table: Table = catalog.load_table(table_identifier)
-
         logging.info(f"Saving data to {table_identifier} with schema {iceberg_configuration.schema} and {len(data)} rows")
 
-        table.append(pa.Table.from_pylist(mapping=data, schema=iceberg_configuration.schema.as_arrow()))
+        with table.transaction() as transaction:
+            transaction.append(self.to_arrow(data, iceberg_configuration))
 
         logging.info(f"Created snapshot_id: {table.current_snapshot().snapshot_id} for table {table_identifier}")
         return data
