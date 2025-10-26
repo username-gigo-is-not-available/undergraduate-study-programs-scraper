@@ -1,3 +1,4 @@
+import logging
 from abc import abstractmethod
 from concurrent.futures import Executor
 from ssl import SSLContext
@@ -7,6 +8,7 @@ from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import ApplicationConfiguration, TableConfiguration
+from src.models.types import Record
 from src.network import HTTPClient
 from src.storage import IcebergClient
 
@@ -39,5 +41,5 @@ class Parser:
                   iceberg_configuration: TableConfiguration,
                   http_client: HTTPClient,
                   iceberg_client: IcebergClient,
-                  executor: Executor | None = None) -> list[NamedTuple]:
+                  executor: Executor | None = None) -> list[Record]:
         raise NotImplementedError("Subclasses must implement the run() method.")

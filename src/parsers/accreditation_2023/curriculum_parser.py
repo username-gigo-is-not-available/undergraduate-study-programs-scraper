@@ -1,0 +1,165 @@
+import asyncio
+import logging
+import queue
+import threading
+from asyncio import Task
+from concurrent.futures import Executor
+from functools import partial, reduce
+from ssl import SSLContext
+from typing import Any
+
+from aiohttp import ClientSession
+from bs4 import Tag, BeautifulSoup
+
+from src.configurations import TableConfiguration
+from src.corrector import CourseCorrector
+from src.models.data_classes import Curriculum, StudyProgram, CourseHeader
+from src.models.enums import OfferingType
+from src.network import HTTPClient
+from src.parsers.accreditation_2023.study_program_parser import StudyProgramParser
+from src.parsers.base_parser import Parser
+from src.storage import IcebergClient
+
+
+class CurriculumParser(Parser):
+    # https://finki.ukim.mk/program/{program_name}
+
+    MANDATORY_COURSE_SECTION_SELECTOR: str = '.col-md-6.col-sm-12'
+    ELECTIVE_COURSE_SECTION_SELECTOR: str = '.col-md-12.col-sm-12'
+    COURSE_SECTION_ROWS_SELECTOR: str = 'tr'
+    COURSE_CODE_SELECTOR: str = 'td:nth-child(1)'
+    COURSE_NAME_AND_URL_SELECTOR: str = 'td:nth-child(2) > a'
+    COURSE_SEMESTER_SELECTOR: str = 'td:nth-child(3)'
+    MANDATORY_COURSE_SEMESTER_SELECTOR: str = 'h3 > span'
+
+    COURSE_HEADERS_QUEUE: queue.Queue = queue.Queue()
+    CURRICULA_QUEUE: queue.Queue = queue.Queue()
+    CURRICULA_DONE_EVENT: asyncio.Event = asyncio.Event()
+    COURSE_HEADERS_READY_EVENT: threading.Event = threading.Event()
+
+    def parse_row(self, *args, **kwargs) -> Curriculum:
+
+        study_program_url: str = kwargs.get('study_program_url')
+        course_row: Tag = kwargs.get('element')
+        offering_type: OfferingType = kwargs.get('offering_type')
+
+        fields: dict[str, str | int] = CourseCorrector.correct({
+            'code': self.extract_text(course_row, self.COURSE_CODE_SELECTOR),
+            'name': self.extract_text(course_row, self.COURSE_NAME_AND_URL_SELECTOR),
+            'url': self.extract_url(course_row, self.COURSE_NAME_AND_URL_SELECTOR)
+        })
+        course_header: CourseHeader = CourseHeader(
+            code=fields.get('code'),
+            name=fields.get('name'),
+            url=fields.get('url')
+        )
+
+        self.COURSE_HEADERS_QUEUE.put_nowait(course_header)
+        if not self.COURSE_HEADERS_READY_EVENT.is_set():
+            self.COURSE_HEADERS_READY_EVENT.set()
+
+        curriculum: Curriculum = Curriculum(
+            study_program_url=study_program_url,
+            course_url=course_header.url,
+            offering_type=offering_type,
+            semester=int(self.extract_text(course_row, self.COURSE_SEMESTER_SELECTOR))
+        )
+        logging.info(f"Scraped curriculum {curriculum}")
+
+        return curriculum
+
+    @classmethod
+    def _modify_course_row(cls, row: Tag, element_name: str, text: str) -> Tag:
+        tag: Tag = Tag(name=element_name)
+        tag.string = text
+        row.append(tag)
+        return row
+
+    @classmethod
+    def _is_valid_course_row(cls, row: Tag):
+        return bool(row.select_one(cls.COURSE_CODE_SELECTOR) and row.select_one(cls.COURSE_NAME_AND_URL_SELECTOR))
+
+    @classmethod
+    def _flatten(cls, data: list[list[Any]]) -> list[Any]:
+        return reduce(lambda x, y: x + y, data)
+
+    @classmethod
+    def _extract_rows_from_section(cls, section: Tag) -> list[Tag]:
+        return [row for row in section.select(cls.COURSE_SECTION_ROWS_SELECTOR) if cls._is_valid_course_row(row)]
+
+    @classmethod
+    def _modify_course_rows(cls, rows: list[Tag], element_name: str, text: str) -> list[Tag]:
+        return [cls._modify_course_row(row, element_name, text) for row in rows]
+
+    def _parse_course_rows(self, rows: list[Tag], offering_type: OfferingType, study_program_url: str) -> list[Curriculum]:
+        return [self.parse_row(
+                    study_program_url=study_program_url,
+                    element=row,
+                    offering_type=offering_type
+                ) for row in rows]
+
+
+    def parse_data(self, *args, **kwargs) -> list[Curriculum]:
+
+        study_program_url: str = kwargs.get('study_program_url')
+        page_content: str = kwargs.get('page_content')
+        soup: BeautifulSoup = self.get_parsed_html(page_content)
+
+        curricula: list[Curriculum] = []
+        offering_type_selectors: dict[OfferingType, str] = {
+            OfferingType.MANDATORY: self.MANDATORY_COURSE_SECTION_SELECTOR,
+            OfferingType.ELECTIVE: self.ELECTIVE_COURSE_SECTION_SELECTOR,
+        }
+
+        for offering_type, selector in offering_type_selectors.items():
+            for section in soup.select(selector):
+                rows: list[Tag] = self._extract_rows_from_section(section)
+                if offering_type == OfferingType.MANDATORY:
+                    rows: list[Tag] = self._modify_course_rows(
+                                                                      rows=rows,
+                                                                      element_name='td',
+                                                                      text=self.extract_text(
+                                                                          section,
+                                                                          self.MANDATORY_COURSE_SEMESTER_SELECTOR
+                                                                          )
+                                                                     )
+                curricula.extend(self._parse_course_rows(
+                    rows=rows,
+                    offering_type=offering_type,
+                    study_program_url=study_program_url
+                ))
+
+
+        return curricula
+
+
+    async def run(self, session: ClientSession,
+                  ssl_context: SSLContext,
+                  iceberg_configuration: TableConfiguration,
+                  http_client: HTTPClient,
+                  iceberg_client: IcebergClient,
+                  executor: Executor | None = None) -> list[Curriculum]:
+
+        loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+        await StudyProgramParser.STUDY_PROGRAMS_READY_EVENT.wait()
+        while True:
+            try:
+                study_program, page_content = StudyProgramParser.STUDY_PROGRAMS_QUEUE.get_nowait()
+            except queue.Empty:
+                if StudyProgramParser.STUDY_PROGRAMS_DONE_EVENT.is_set():
+                    break
+                else:
+                    await asyncio.sleep(0.1)
+                    continue
+
+            self.CURRICULA_QUEUE.put_nowait(loop.run_in_executor(executor, partial(self.parse_data,
+                                                                                   study_program_url=study_program.url,
+                                                                                   page_content=page_content)))
+
+        nested_curricula: list[list[Curriculum]] = await asyncio.gather(
+            *[self.CURRICULA_QUEUE.get_nowait() for _ in range(self.CURRICULA_QUEUE.qsize())])  # type: ignore
+        self.CURRICULA_DONE_EVENT.set()
+        curricula: list[Curriculum] = self._flatten(nested_curricula)
+        logging.info(f"Finished processing {iceberg_configuration}")
+        await iceberg_client.save_data(curricula, iceberg_configuration)
+        return curricula

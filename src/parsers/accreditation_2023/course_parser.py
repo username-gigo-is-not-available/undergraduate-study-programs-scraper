@@ -5,20 +5,17 @@ import threading
 from asyncio import Task
 from concurrent.futures import Executor
 from functools import partial
-from http import HTTPStatus
 from queue import Queue
 from ssl import SSLContext
-from typing import NamedTuple
 
 from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import TableConfiguration
-from src.models.named_tuples import Course, CourseHeader
+from src.models.data_classes import Course, CourseHeader
 from src.network import HTTPClient
+from src.parsers.accreditation_2023.curriculum_parser import CurriculumParser
 from src.parsers.base_parser import Parser
-from src.parsers.curriculum_parser import CurriculumParser
-from src.corrector import CourseCorrector
 from src.storage import IcebergClient
 
 
@@ -27,7 +24,6 @@ class CourseParser(Parser):
 
     COURSE_TABLE_CLASS_NAME: str = 'table.table-striped.table.table-bordered.table-sm'
     COURSE_NAME_MK_SELECTOR: str = 'tr:nth-child(1) > td:nth-child(3) > p:nth-child(1) > b'
-    COURSE_NAME_EN_SELECTOR: str = 'tr:nth-child(1) > td:nth-child(3) > p:nth-child(2) > span'
     COURSE_CODE_SELECTOR: str = 'tr:nth-child(2) > td:nth-child(3) > p > span'
     COURSE_URL_SELECTOR: str = 'head > link:nth-child(7)'
     COURSE_PROFESSORS_SELECTOR: str = 'tr:nth-child(7) > td:nth-child(3)'
@@ -44,15 +40,15 @@ class CourseParser(Parser):
         course_header: CourseHeader = kwargs.get('course_header')
         course_table: Tag = kwargs.get('element')
 
-        fields: dict[str, str] = CourseCorrector.correct({
-            'course_name_en': self.extract_text(course_table, self.COURSE_NAME_EN_SELECTOR),
-            'course_professors': self.extract_text(course_table, self.COURSE_PROFESSORS_SELECTOR),
-            'course_prerequisites': self.extract_text(course_table, self.COURSE_PREREQUISITE_SELECTOR),
-            'course_competence': self.extract_text(course_table, self.COURSE_COMPETENCE_SELECTOR),
-            'course_content': self.extract_text(course_table, self.COURSE_CONTENT_SELECTOR),
-        })
-
-        course: Course = Course(**{**course_header._asdict(), **fields})
+        course: Course = Course(
+            code=course_header.code,
+            name=course_header.name,
+            url=course_header.url,
+            professors=self.extract_text(course_table, self.COURSE_PROFESSORS_SELECTOR),
+            prerequisites=self.extract_text(course_table, self.COURSE_PREREQUISITE_SELECTOR),
+            competence=self.extract_text(course_table, self.COURSE_COMPETENCE_SELECTOR),
+            content=self.extract_text(course_table, self.COURSE_CONTENT_SELECTOR),
+        )
         logging.info(f"Scraped course {course}")
         return course
 
@@ -68,7 +64,7 @@ class CourseParser(Parser):
                   iceberg_configuration: TableConfiguration,
                   http_client: HTTPClient,
                   iceberg_client: IcebergClient,
-                  executor: Executor | None = None) -> list[NamedTuple]:
+                  executor: Executor | None = None) -> list[Course]:
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
         await loop.run_in_executor(None, CurriculumParser.COURSE_HEADERS_READY_EVENT.wait)
         tasks: list[Task[tuple[int, str, CourseHeader]]] = []
@@ -85,26 +81,21 @@ class CourseParser(Parser):
             if course_header not in self.PROCESSED_COURSE_HEADERS:
                 tasks.append(asyncio.create_task(
                     http_client.fetch_page_wrapper(session=session,
-                                            ssl_context=ssl_context,
-                                            url=course_header.course_url,
-                                            named_tuple=course_header,
-                                            )
+                                                   ssl_context=ssl_context,
+                                                   url=course_header.url,
+                                                   record=course_header,
+                                                   )
                 ))
                 self.PROCESSED_COURSE_HEADERS.add(course_header)
 
         for task in asyncio.as_completed(tasks):
             http_status, page_content, course_header = await task
-            if http_status != HTTPStatus.OK:
-                logging.error(
-                    f"Tried to fetch {course_header.course_url} but got HTTP status: {http_status}"
-                )
-                break
             self.COURSES_QUEUE.put_nowait(
             loop.run_in_executor(executor, partial(self.parse_data, course_header=course_header, page_content=page_content)))
 
-        self.COURSES_DONE_EVENT.set()
         courses: list[Course] = await asyncio.gather(
             *[self.COURSES_QUEUE.get_nowait() for _ in range(self.COURSES_QUEUE.qsize())])  # type: ignore
+        self.COURSES_DONE_EVENT.set()
         logging.info(f"Finished processing {iceberg_configuration}")
         await iceberg_client.save_data(courses, iceberg_configuration)
         return courses

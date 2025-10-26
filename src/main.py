@@ -2,17 +2,17 @@ import asyncio
 import logging
 import ssl
 import time
-import src.setup
-from src.configurations import StorageConfiguration, ApplicationConfiguration, COURSES, CURRICULA, STUDY_PROGRAMS
-from src.initialization import initialize
 from concurrent.futures import ThreadPoolExecutor
+
+from src.configurations import STUDY_PROGRAMS, ApplicationConfiguration, CURRICULA, COURSES
+from src.initialization import initialize
 import certifi
 from aiohttp import ClientSession
 
 from src.network import HTTPClient
-from src.parsers.course_parser import CourseParser
-from src.parsers.curriculum_parser import CurriculumParser
-from src.parsers.study_program_parser import StudyProgramParser
+from src.parsers.accreditation_2023.course_parser import CourseParser
+from src.parsers.accreditation_2023.curriculum_parser import CurriculumParser
+from src.parsers.accreditation_2023.study_program_parser import StudyProgramParser
 from src.storage import IcebergClient
 
 logging.basicConfig(level=logging.INFO, force=True)
