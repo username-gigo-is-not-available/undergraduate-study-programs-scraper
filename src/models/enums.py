@@ -6,21 +6,21 @@ class UpperStrEnum(StrEnum):
         return name.upper()
 
 
-class CourseType(UpperStrEnum):
+class OfferingType(UpperStrEnum):
     MANDATORY = auto()
     ELECTIVE = auto()
 
     @classmethod
-    def from_bool(cls, value: bool) -> 'CourseType':
+    def from_bool(cls, value: bool) -> 'OfferingType':
         return cls.ELECTIVE if value else cls.MANDATORY
 
 
-class CourseSemesterSeasonType(UpperStrEnum):
+class SemesterSeasonType(UpperStrEnum):
     WINTER = auto()
     SUMMER = auto()
 
     @classmethod
-    def from_str(cls, value: str) -> 'CourseSemesterSeasonType':
+    def from_str(cls, value: str) -> 'SemesterSeasonType':
         return cls.WINTER if value == 'Зимски' else cls.SUMMER
 
 class FileIOType(UpperStrEnum):
