@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from abc import abstractmethod
 from concurrent.futures import Executor
@@ -28,8 +29,18 @@ class Parser:
         return BeautifulSoup(html, 'lxml')
 
     @classmethod
-    def extract_text(cls, tag: Tag, selector: str) -> str:
-        return tag.select_one(selector).text.strip()
+    def extract_text(cls, tag: Tag, selector: str, recursive: bool = False) -> str:
+        element: Tag | None = tag.select_one(selector)
+        if not element:
+            return ""
+        text: str | None = element.find(text=True, recursive=recursive)
+        if not text:
+            return ""
+        return element.find(text=True, recursive=recursive)
+
+    @classmethod
+    def extract_multiple_texts(cls, tag: Tag, selector: str, recursive: bool = False) -> list[str]:
+        return [tag.find(text=True, recursive=recursive) for tag in tag.select(selector)]
 
     @classmethod
     def extract_url(cls, tag: Tag, selector: str) -> str:
@@ -41,5 +52,6 @@ class Parser:
                   iceberg_configuration: TableConfiguration,
                   http_client: HTTPClient,
                   iceberg_client: IcebergClient,
+                  semaphore: asyncio.Semaphore | None = None,
                   executor: Executor | None = None) -> list[Record]:
         raise NotImplementedError("Subclasses must implement the run() method.")
