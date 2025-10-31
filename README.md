@@ -54,12 +54,12 @@ The application is configured using environment variables, which must be sourced
 | `FILE_IO_TYPE` | The type of storage that will be used. Must be **"LOCAL"** or **"S3"**.                                                                                           |
 
 ### Scraper Configuration
-| Variable | Description                                                                                                                                                       |
-| :--- |:------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Variable | Description                                                                                                                                                            |
+| :--- |:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `NUMBER_OF_THREADS` | The maximum number of threads used for thread-intensive operations (e.g., parsing HTML).<br/> Set to `-1` to use maximum number of threads (`number of CPU cores * 5`) |
-| `REQUEST_TIMEOUT_SECONDS` | Maximum wait time for a single HTTP request in seconds before timing out.                                                                                         |
-| `REQUESTS_RETRY_COUNT` | The number of times an HTTP request will be retried if it fails.                                                                                                  |
-| `REQUESTS_RETRY_DELAY_SECONDS` | The wait delay in seconds between failed HTTP request retries.                                                                                                    |
+| `NUMBER_OF_CONCURRENT_REQUESTS` | The maximum number of simultaneous network requests (e.g., HTTP fetches)<br> the application is allowed to execute at any given time.                                  | `REQUEST_TIMEOUT_SECONDS` | Maximum wait time for a single HTTP request in seconds before timing out.                                                                                              |
+| `REQUESTS_RETRY_COUNT` | The number of times an HTTP request will be retried if it fails.                                                                                                       |
+| `REQUESTS_RETRY_DELAY_SECONDS` | The wait delay in seconds between failed HTTP request retries.                                                                                                         |
 
 ### Iceberg Configuration (Metastore)
 
