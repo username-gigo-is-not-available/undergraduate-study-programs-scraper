@@ -13,11 +13,6 @@ class StudyProgram:
     def __str__(self):
         return f"{self.name} {self.duration}"
 
-@dataclass(frozen=True)
-class CourseHeader:
-    code: str
-    name: str
-    url: str
 
 @dataclass(frozen=True)
 class Curriculum:

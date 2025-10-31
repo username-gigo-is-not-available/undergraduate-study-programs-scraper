@@ -2,7 +2,6 @@ import asyncio
 import logging
 import queue
 import threading
-from asyncio import Task
 from concurrent.futures import Executor
 from functools import partial, reduce
 from ssl import SSLContext
@@ -12,8 +11,7 @@ from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
 from src.configurations import TableConfiguration
-from src.corrector import CourseCorrector
-from src.models.data_classes import Curriculum, StudyProgram, CourseHeader
+from src.models.data_classes import Curriculum
 from src.models.enums import OfferingType
 from src.network import HTTPClient
 from src.parsers.accreditation_2023.study_program_parser import StudyProgramParser
@@ -27,12 +25,11 @@ class CurriculumParser(Parser):
     MANDATORY_COURSE_SECTION_SELECTOR: str = '.col-md-6.col-sm-12'
     ELECTIVE_COURSE_SECTION_SELECTOR: str = '.col-md-12.col-sm-12'
     COURSE_SECTION_ROWS_SELECTOR: str = 'tr'
-    COURSE_CODE_SELECTOR: str = 'td:nth-child(1)'
-    COURSE_NAME_AND_URL_SELECTOR: str = 'td:nth-child(2) > a'
+    COURSE_URL_SELECTOR: str = 'td:nth-child(2) > a'
     COURSE_SEMESTER_SELECTOR: str = 'td:nth-child(3)'
     MANDATORY_COURSE_SEMESTER_SELECTOR: str = 'h3 > span'
 
-    COURSE_HEADERS_QUEUE: queue.Queue = queue.Queue()
+    COURSE_URLS_QUEUE: queue.Queue = queue.Queue()
     CURRICULA_QUEUE: queue.Queue = queue.Queue()
     CURRICULA_DONE_EVENT: asyncio.Event = asyncio.Event()
     COURSE_HEADERS_READY_EVENT: threading.Event = threading.Event()
@@ -40,29 +37,19 @@ class CurriculumParser(Parser):
     def parse_row(self, *args, **kwargs) -> Curriculum:
 
         study_program_url: str = kwargs.get('study_program_url')
-        course_row: Tag = kwargs.get('element')
+        element: Tag = kwargs.get('element')
         offering_type: OfferingType = kwargs.get('offering_type')
+        course_url: str = self.extract_url(element, self.COURSE_URL_SELECTOR)
 
-        fields: dict[str, str | int] = CourseCorrector.correct({
-            'code': self.extract_text(course_row, self.COURSE_CODE_SELECTOR),
-            'name': self.extract_text(course_row, self.COURSE_NAME_AND_URL_SELECTOR),
-            'url': self.extract_url(course_row, self.COURSE_NAME_AND_URL_SELECTOR)
-        })
-        course_header: CourseHeader = CourseHeader(
-            code=fields.get('code'),
-            name=fields.get('name'),
-            url=fields.get('url')
-        )
-
-        self.COURSE_HEADERS_QUEUE.put_nowait(course_header)
+        self.COURSE_URLS_QUEUE.put_nowait(course_url)
         if not self.COURSE_HEADERS_READY_EVENT.is_set():
             self.COURSE_HEADERS_READY_EVENT.set()
 
         curriculum: Curriculum = Curriculum(
             study_program_url=study_program_url,
-            course_url=course_header.url,
+            course_url=course_url,
             offering_type=offering_type,
-            semester=int(self.extract_text(course_row, self.COURSE_SEMESTER_SELECTOR))
+            semester=int(self.extract_text(element, self.COURSE_SEMESTER_SELECTOR))
         )
         logging.info(f"Scraped curriculum {curriculum}")
 
@@ -77,7 +64,7 @@ class CurriculumParser(Parser):
 
     @classmethod
     def _is_valid_course_row(cls, row: Tag):
-        return bool(row.select_one(cls.COURSE_CODE_SELECTOR) and row.select_one(cls.COURSE_NAME_AND_URL_SELECTOR))
+        return bool(row.select_one(cls.COURSE_URL_SELECTOR))
 
     @classmethod
     def _flatten(cls, data: list[list[Any]]) -> list[Any]:
@@ -115,14 +102,10 @@ class CurriculumParser(Parser):
             for section in soup.select(selector):
                 rows: list[Tag] = self._extract_rows_from_section(section)
                 if offering_type == OfferingType.MANDATORY:
-                    rows: list[Tag] = self._modify_course_rows(
-                                                                      rows=rows,
-                                                                      element_name='td',
-                                                                      text=self.extract_text(
-                                                                          section,
-                                                                          self.MANDATORY_COURSE_SEMESTER_SELECTOR
-                                                                          )
-                                                                     )
+                    course_semester: str = self.extract_text(section,
+                                                            self.MANDATORY_COURSE_SEMESTER_SELECTOR
+                                                            )
+                    rows: list[Tag] = self._modify_course_rows(rows=rows, element_name='td', text=course_semester)
                 curricula.extend(self._parse_course_rows(
                     rows=rows,
                     offering_type=offering_type,
@@ -138,6 +121,7 @@ class CurriculumParser(Parser):
                   iceberg_configuration: TableConfiguration,
                   http_client: HTTPClient,
                   iceberg_client: IcebergClient,
+                  semaphore: asyncio.Semaphore | None = None,
                   executor: Executor | None = None) -> list[Curriculum]:
 
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
