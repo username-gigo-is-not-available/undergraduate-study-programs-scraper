@@ -9,7 +9,7 @@ class CourseCorrector:
     def correct(fields: dict[str, str]) -> dict[str, str | None]:
         course_name = fields.get('name')
 
-        if course_name and re.search(ApplicationConfiguration.COURSE_CODES_REGEX, course_name):
+        if course_name and re.search(ApplicationConfiguration.COURSE_2023_CODE_REGEX, course_name):
             fields.update({
                 'code': CourseCorrector.extract_course_code(course_name),
                 'name': CourseCorrector.extract_course_name(course_name)
