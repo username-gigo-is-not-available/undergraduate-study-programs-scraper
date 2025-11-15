@@ -1,7 +1,7 @@
 import asyncio
-import logging
 from abc import abstractmethod
 from concurrent.futures import Executor
+from functools import cache
 from ssl import SSLContext
 from typing import NamedTuple
 
@@ -29,22 +29,31 @@ class Parser:
         return BeautifulSoup(html, 'lxml')
 
     @classmethod
-    def extract_text(cls, tag: Tag, selector: str, recursive: bool = False) -> str:
+    @cache
+    def extract_text(cls, tag: Tag, selector: str) -> str:
         element: Tag | None = tag.select_one(selector)
         if not element:
             return ""
-        text: str | None = element.find(text=True, recursive=recursive)
+        text: str | None = element.get_text(strip=True)
         if not text:
             return ""
-        return element.find(text=True, recursive=recursive)
+        return text
 
     @classmethod
-    def extract_multiple_texts(cls, tag: Tag, selector: str, recursive: bool = False) -> list[str]:
-        return [tag.find(text=True, recursive=recursive) for tag in tag.select(selector)]
+    @cache
+    def extract_multiple_texts(cls, tag: Tag, selector: str) -> list[str]:
+        return [tag.get_text(strip=True) for tag in tag.select(selector)]
 
     @classmethod
-    def extract_url(cls, tag: Tag, selector: str) -> str:
-        return ''.join([ApplicationConfiguration.BASE_URL, tag.select_one(selector)['href']])
+    @cache
+    def extract_url(cls, tag: Tag, selector: str, prepend_base_url: bool = True) -> str:
+        element: Tag | None = tag.select_one(selector)
+        if not element:
+            return ""
+        url: str = tag.select_one(selector)['href']
+        if prepend_base_url:
+            return ''.join([ApplicationConfiguration.BASE_URL, url])
+        return url
 
     @abstractmethod
     async def run(self, session: ClientSession,
