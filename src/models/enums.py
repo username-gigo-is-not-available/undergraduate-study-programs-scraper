@@ -14,6 +14,15 @@ class OfferingType(UpperStrEnum):
     def from_bool(cls, value: bool) -> 'OfferingType':
         return cls.ELECTIVE if value else cls.MANDATORY
 
+    @classmethod
+    def from_string(cls, value: str) -> 'OfferingType':
+        if 'Задолжителни предмети'.casefold() == value.casefold():
+            return cls.MANDATORY
+        elif 'Изборни предмети'.casefold() == value.casefold():
+            return cls.ELECTIVE
+        else:
+            raise ValueError(value)
+
 
 class SemesterSeasonType(UpperStrEnum):
     WINTER = auto()
@@ -21,7 +30,7 @@ class SemesterSeasonType(UpperStrEnum):
 
     @classmethod
     def from_str(cls, value: str) -> 'SemesterSeasonType':
-        return cls.WINTER if value == 'Зимски' else cls.SUMMER
+        return cls.WINTER if value.casefold() == 'Зимски'.casefold() else cls.SUMMER
 
 class FileIOType(UpperStrEnum):
     S3 = auto()
