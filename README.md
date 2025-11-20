@@ -1,4 +1,4 @@
-# FCSE-Skopje 2023 Undergraduate Study Programs Scraper
+# FCSE-Skopje Undergraduate Study Programs Scraper
 
 The scraper is used to scrape the study programs and related courses from the **[Faculty of Computer Science and Engineering (FCSE)](https://finki.ukim.mk)** at the **[Ss. Cyril and Methodius University in Skopje](https://www.ukim.edu.mk)**. The primary source data can be found at: [https://finki.ukim.mk/mk/dodiplomski-studii](https://finki.ukim.mk/mk/dodiplomski-studii).
 
@@ -16,11 +16,14 @@ The application uses **Python**, **aiohttp** for asynchronous networking, **mult
 
 The scraper saves the data into an **Apache Iceberg lakehouse** structure within a specified namespace (`ICEBERG_NAMESPACE`). The output is structured into three main tables:
 
-| Table Name | Description |
-| :--- | :--- |
-| `study_programs` | Contains the core details of the undergraduate study programs. |
-| `curriculum` | Contains the mapping and details linking study programs to their associated courses. |
-| `courses` | Contains the full descriptive details of each individual course. |
+| Table Name            | Description                                                                                                            |
+|:----------------------|:-----------------------------------------------------------------------------------------------------------------------|
+| `study_programs_2018` | Contains the core details of the undergraduate study programs offered in the 2018 accreditation.                       |
+| `curricula_2018`      | Contains the mapping and details linking study programs to their associated courses offered in the 2018 accreditation. |
+| `courses_2018`        | Contains the full descriptive details of each individual course offered in the 2018 accreditation.                     |
+| `study_programs_2023` | Contains the core details of the undergraduate study programs offered in the 2023 accreditation.                       |
+| `curriculum_2023`     | Contains the mapping and details linking study programs to their associated courses offered in the 2023 accreditation. |
+| `courses_2023`        | Contains the full descriptive details of each individual course offered in the 2023 accreditation.                     |
 
 ---
 
