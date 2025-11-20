@@ -35,7 +35,7 @@ class Curriculum2018Parser(BaseCurriculumParser):
         study_program: StudyProgram2018 = kwargs.get('study_program')
         element: Tag = kwargs.get('element')
         offering_type: OfferingType = kwargs.get('offering_type')
-        semester: str = kwargs.get('semester')
+        semester: int = kwargs.get('semester')
         course_url: str = self.extract_url(element, self.course_url_selector)
         course_name: str = self.extract_text(element, self.course_name_selector)
 
@@ -44,7 +44,8 @@ class Curriculum2018Parser(BaseCurriculumParser):
 
         curriculum: Curriculum2018 = Curriculum2018(
             accreditation_year=self.accreditation_year,
-            study_program_full_name=study_program.full_name,
+            study_program_name=study_program.name,
+            study_program_duration=study_program.duration,
             course_name=course_name,
             offering_type=offering_type,
             semester=semester

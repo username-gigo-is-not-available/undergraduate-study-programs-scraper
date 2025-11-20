@@ -37,12 +37,5 @@ NestedField(
         field_type=StringType(),
         required=True,
         doc="The official title of the study program."
-    ),
-    NestedField(
-        id=6,
-        name="full_name",
-        field_type=StringType(),
-        required=True,
-        doc="The name and duration of the study program."
     )
 )

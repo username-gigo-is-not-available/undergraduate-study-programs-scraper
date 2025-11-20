@@ -10,7 +10,6 @@ class StudyProgram2018:
     duration: int
     url: str
     title: str
-    full_name: str
 
     def __str__(self):
         return f"{self.accreditation_year} {self.name} {self.duration}"
@@ -19,13 +18,14 @@ class StudyProgram2018:
 @dataclass(frozen=True)
 class Curriculum2018:
     accreditation_year: int
-    study_program_full_name: str
+    study_program_name: str
+    study_program_duration: int
     course_name: str
     semester: int
     offering_type: OfferingType
 
     def __str__(self):
-        return f"{self.accreditation_year} {self.study_program_full_name} {self.course_name}"
+        return f"{self.accreditation_year} {self.study_program_name} {self.study_program_duration} {self.course_name}"
 
 
 @dataclass(frozen=True)

@@ -44,14 +44,12 @@ class StudyProgram2018Parser(BaseStudyProgramParser):
         url: str = kwargs.get('url')
         duration: int = kwargs.get('duration')
         self.decompose(element, self.arrow_selector)
-        name: str = self.extract_text(element, self.name_selector)
         study_program: StudyProgram2018 = StudyProgram2018(
             accreditation_year=self.accreditation_year,
-            name=name,
+            name=self.extract_text(element, self.name_selector),
             duration=duration,
             url=url,
             title=self.extract_text(element, self.title_selector),
-            full_name=f"{name}_{duration}",
         )
         logging.info(f"Scraped study_program {study_program}")
         return study_program
