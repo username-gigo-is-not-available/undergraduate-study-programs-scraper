@@ -20,7 +20,7 @@ NestedField(
     NestedField(
         id=3,
         name="duration",
-        field_type=StringType(),
+        field_type=IntegerType(),
         required=True,
         doc="The standard duration of the study program in academic years (e.g. 2, 3, 4)"
     ),

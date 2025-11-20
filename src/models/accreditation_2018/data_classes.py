@@ -7,7 +7,7 @@ from src.models.enums import OfferingType
 class StudyProgram2018:
     accreditation_year: int
     name: str
-    duration: str
+    duration: int
     url: str
     title: str
     full_name: str
@@ -21,7 +21,7 @@ class Curriculum2018:
     accreditation_year: int
     study_program_full_name: str
     course_name: str
-    semester: str
+    semester: int
     offering_type: OfferingType
 
     def __str__(self):

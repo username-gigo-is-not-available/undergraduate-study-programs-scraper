@@ -26,7 +26,7 @@ NestedField(
     NestedField(
         id=4,
         name="semester",
-        field_type=StringType(),
+        field_type=IntegerType(),
         required=True,
         doc="The semester the course is offered in (range: [1, 8], depending on the study program duration)"
     ),
