@@ -43,6 +43,15 @@ class BaseParser:
 
     @classmethod
     @cache
+    def extract_texts_from_node(cls, tag: Tag, selector: str) -> list[str]:
+        element: Tag | None = tag.select_one(selector)
+        if not element:
+            return []
+
+        return element.find_all(text=True, recursive=False)
+
+    @classmethod
+    @cache
     def extract_multiple_texts(cls, tag: Tag, selector: str) -> list[str]:
         return [tag.get_text(strip=True) for tag in tag.select(selector)]
 
