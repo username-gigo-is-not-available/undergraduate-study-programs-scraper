@@ -5,8 +5,7 @@ import src.setup
 from pyiceberg.schema import Schema
 from pyiceberg.catalog import Catalog
 
-from src.configurations import StorageConfiguration, COURSES_2023, CURRICULA_2023, STUDY_PROGRAMS_2023, \
-    TableConfiguration, STUDY_PROGRAMS_2018, CURRICULA_2018, COURSES_2018
+from src.configurations import StorageConfiguration, PipelineConfiguration
 from src.models.enums import FileIOType
 from src.storage import IcebergClient
 
@@ -28,10 +27,10 @@ async def create_warehouse_if_not_exists() -> None:
         logging.info(f"Creating bucket '{bucket_name}'")
         await s3_client.make_bucket(bucket_name)
 
-async def initialize():
+async def initialize(pipeline_configurations: list[PipelineConfiguration]) -> None:
     logging.info("Initializing...")
     await create_warehouse_if_not_exists()
-    iceberg_client: IcebergClient() = IcebergClient()
+    iceberg_client: IcebergClient = IcebergClient()
     catalog: Catalog = iceberg_client.get_catalog()
 
     namespace: str = StorageConfiguration.ICEBERG_NAMESPACE
@@ -39,20 +38,11 @@ async def initialize():
     logging.info(f"Creating namespace '{namespace}'")
     catalog.create_namespace_if_not_exists(namespace)
 
-    datasets: list[TableConfiguration] = [
-        STUDY_PROGRAMS_2023,
-        CURRICULA_2023,
-        COURSES_2023,
-        STUDY_PROGRAMS_2018,
-        CURRICULA_2018,
-        COURSES_2018,
-    ]
-
-    for dataset in datasets:
-        table_identifier: str = iceberg_client.get_table_identifier(namespace, dataset.table_name)
-        schema: Schema = dataset.schema
-        logging.info(f"Creating table '{table_identifier}'")
-        catalog.create_table_if_not_exists(table_identifier, schema)
+    for configuration in pipeline_configurations:
+            table_identifier: str = iceberg_client.get_table_identifier(namespace, configuration.table_name)
+            schema: Schema = configuration.schema
+            logging.info(f"Creating table '{table_identifier}'")
+            catalog.create_table_if_not_exists(table_identifier, schema)
     logging.info("Initialization complete!")
 
 
