@@ -11,27 +11,34 @@ NestedField(
     ),
     NestedField(
         id=2,
-        name="study_program_url",
+        name="study_program_name",
         field_type=StringType(),
         required=True,
-        doc="The unique URL to the official study program description or page."
+        doc="The official name of the undergraduate study program."
     ),
     NestedField(
         id=3,
-        name="course_url",
-        field_type=StringType(),
+        name="study_program_duration",
+        field_type=IntegerType(),
         required=True,
-        doc="The unique URL to the official course description or page."
+        doc="The standard duration of the study program in academic years (e.g. 2, 3, 4)"
     ),
     NestedField(
         id=4,
+        name="course_name",
+        field_type=StringType(),
+        required=True,
+        doc="The official name of the course."
+    ),
+    NestedField(
+        id=5,
         name="semester",
         field_type=IntegerType(),
         required=True,
         doc="The semester the course is offered in (range: [1, 8], depending on the study program duration)"
     ),
     NestedField(
-        id=5,
+        id=6,
         name="offering_type",
         field_type=StringType(),
         required=True,

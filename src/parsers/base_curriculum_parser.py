@@ -33,6 +33,11 @@ class BaseCurriculumParser(BaseParser):
     def course_url_selector(self) -> str:
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def course_name_selector(self) -> str:
+        raise NotImplementedError
+
     def parse_row(self, *args, **kwargs) -> Curriculum:
         pass
 

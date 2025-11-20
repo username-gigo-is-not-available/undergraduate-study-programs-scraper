@@ -26,6 +26,10 @@ class Curriculum2023Parser(BaseCurriculumParser):
         return 'td:nth-child(2) > a'
 
     @property
+    def course_name_selector(self) -> str:
+        return 'td:nth-child(2)'
+
+    @property
     def mandatory_course_semester_selector(self) -> str:
         return 'h3 > span'
 
@@ -40,13 +44,14 @@ class Curriculum2023Parser(BaseCurriculumParser):
         offering_type: OfferingType = kwargs.get('offering_type')
         course_url: str = self.extract_url(element, self.course_url_selector)
         semester: int = kwargs.get('semester') or int(self.extract_text(element, self.elective_course_semester_selector))
-
+        course_name: str = self.extract_text(element, self.course_name_selector)
         self.course_urls_queue.put_nowait(course_url)
         self.set_event(self.ready_event)
         curriculum: Curriculum2023 = Curriculum2023(
             accreditation_year=self.accreditation_year,
-            study_program_url=study_program.url,
-            course_url=course_url,
+            study_program_name=study_program.name,
+            study_program_duration=study_program.duration,
+            course_name=course_name,
             offering_type=offering_type,
             semester=semester,
         )
