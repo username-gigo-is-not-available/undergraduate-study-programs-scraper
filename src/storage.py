@@ -5,9 +5,10 @@ from typing import Any
 import pyarrow as pa
 from miniopy_async import Minio
 from pyiceberg.catalog import load_catalog, Catalog
+from pyiceberg.schema import Schema
 from pyiceberg.table import Table
 
-from src.configurations import StorageConfiguration, TableConfiguration
+from src.configurations import StorageConfiguration
 from src.models.enums import FileIOType
 from src.models.types import Record
 
@@ -48,18 +49,18 @@ class IcebergClient:
         return f"{namespace}.{table_name}"
 
     @classmethod
-    def to_arrow(cls, data: list[Record], iceberg_configuration: TableConfiguration) -> pa.Table:
-        return pa.Table.from_pylist(mapping=([asdict(row) for row in data]), schema=iceberg_configuration.schema.as_arrow())
+    def to_arrow(cls, data: list[Record], schema: Schema) -> pa.Table:
+        return pa.Table.from_pylist(mapping=([asdict(row) for row in data]), schema=schema.as_arrow())
 
-    async def save_data(self, data: list[Record], iceberg_configuration: TableConfiguration) -> list[dict[str, Any]]:
+    async def save_data(self, data: list[Record], table_name: str, schema: Schema) -> list[dict[str, Any]]:
         catalog: Catalog = self.get_catalog()
 
-        table_identifier: str = self.get_table_identifier(StorageConfiguration.ICEBERG_NAMESPACE, iceberg_configuration.table_name)
+        table_identifier: str = self.get_table_identifier(StorageConfiguration.ICEBERG_NAMESPACE, table_name)
         table: Table = catalog.load_table(table_identifier)
-        logging.info(f"Saving data to {table_identifier} with schema {iceberg_configuration.schema} and {len(data)} rows")
+        logging.info(f"Saving data to {table_identifier} with schema {schema} and {len(data)} rows")
 
         with table.transaction() as transaction:
-            transaction.append(self.to_arrow(data, iceberg_configuration))
+            transaction.append(self.to_arrow(data, schema))
 
         logging.info(f"Created snapshot_id: {table.current_snapshot().snapshot_id} for table {table_identifier}")
         return data
