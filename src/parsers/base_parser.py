@@ -1,32 +1,34 @@
 import asyncio
+import threading
 from abc import abstractmethod
-from concurrent.futures import Executor
 from functools import cache
-from ssl import SSLContext
-from typing import NamedTuple
 
-from aiohttp import ClientSession
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import ApplicationConfiguration, TableConfiguration
 from src.models.types import Record
-from src.network import HTTPClient
-from src.storage import IcebergClient
 
 
-class Parser:
+class BaseParser:
+    BASE_URL: str = "https://finki.ukim.mk"
+
+    @property
+    @abstractmethod
+    def accreditation_year(self) -> int:
+        raise NotImplementedError("Subclasses must implement this property")
 
     @classmethod
-    async def parse_row(cls, *args, **kwargs) -> NamedTuple:
-        pass
-
-    @classmethod
-    async def parse_data(cls, *args, **kwargs) -> list[NamedTuple]:
-        pass
+    def set_event(cls, event: asyncio.Event | threading.Event) -> None:
+        if event.is_set():
+            return
+        event.set()
 
     @classmethod
     def get_parsed_html(cls, html: str) -> BeautifulSoup:
         return BeautifulSoup(html, 'lxml')
+
+    @classmethod
+    def decompose(cls, tag: Tag, selector: str) -> Tag:
+        return tag.find(selector).extract()
 
     @classmethod
     @cache
@@ -52,15 +54,18 @@ class Parser:
             return ""
         url: str = tag.select_one(selector)['href']
         if prepend_base_url:
-            return ''.join([ApplicationConfiguration.BASE_URL, url])
+            return ''.join([cls.BASE_URL, url])
         return url
 
     @abstractmethod
-    async def run(self, session: ClientSession,
-                  ssl_context: SSLContext,
-                  iceberg_configuration: TableConfiguration,
-                  http_client: HTTPClient,
-                  iceberg_client: IcebergClient,
-                  semaphore: asyncio.Semaphore | None = None,
-                  executor: Executor | None = None) -> list[Record]:
-        raise NotImplementedError("Subclasses must implement the run() method.")
+    def parse_row(self, *args, **kwargs) -> Record:
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
+    def parse_data(self, *args, **kwargs) -> list[Record] | Record:
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
+    def run(self, *args, **kwargs) -> list[Record] | Record:
+        raise NotImplementedError("Subclasses must implement this method.")
+
