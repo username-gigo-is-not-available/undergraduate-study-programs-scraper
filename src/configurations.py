@@ -1,12 +1,17 @@
 import os
+from dotenv import load_dotenv
+
 from dataclasses import dataclass
 from pathlib import Path
 
 from pyiceberg.schema import Schema
 
 from src.models.enums import FileIOType
-from src.parsers.base_parser import BaseParser
-from src.setup import ENVIRONMENT_VARIABLES
+
+
+load_dotenv('../.env')
+ENVIRONMENT_VARIABLES: dict[str, str] = dict(os.environ)
+
 
 class ApplicationConfiguration:
     THREADS_PER_CPU_CORE: int = 5
@@ -24,19 +29,9 @@ class ApplicationConfiguration:
 
 
 @dataclass(frozen=True)
-class PipelineConfiguration:
+class TableConfiguration:
     dataset_name: str
-    accreditation_year: int
     schema: Schema
-    parser: BaseParser
-
-    @property
-    def table_name(self) -> str:
-        return f"{self.dataset_name}_{self.accreditation_year}"
-
-    def __str__(self):
-        return self.table_name
-
 
 class StorageConfiguration:
     FILE_IO_TYPE: FileIOType = FileIOType(ENVIRONMENT_VARIABLES.get('FILE_IO_TYPE').upper())

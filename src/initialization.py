@@ -1,11 +1,9 @@
 import logging
 from pathlib import Path
 from miniopy_async import Minio
-import src.setup
-from pyiceberg.schema import Schema
 from pyiceberg.catalog import Catalog
 
-from src.configurations import StorageConfiguration, PipelineConfiguration
+from src.configurations import StorageConfiguration, TableConfiguration
 from src.models.enums import FileIOType
 from src.storage import IcebergClient
 
@@ -27,7 +25,7 @@ async def create_warehouse_if_not_exists() -> None:
         logging.info(f"Creating bucket '{bucket_name}'")
         await s3_client.make_bucket(bucket_name)
 
-async def initialize(pipeline_configurations: list[PipelineConfiguration]) -> None:
+async def create_tables(table_configurations: list[TableConfiguration]) -> None:
     logging.info("Initializing...")
     await create_warehouse_if_not_exists()
     iceberg_client: IcebergClient = IcebergClient()
@@ -38,11 +36,9 @@ async def initialize(pipeline_configurations: list[PipelineConfiguration]) -> No
     logging.info(f"Creating namespace '{namespace}'")
     catalog.create_namespace_if_not_exists(namespace)
 
-    for configuration in pipeline_configurations:
-            table_identifier: str = iceberg_client.get_table_identifier(namespace, configuration.table_name)
-            schema: Schema = configuration.schema
+    for table_configuration in table_configurations:
+            table_identifier: str = iceberg_client.get_table_identifier(namespace, table_configuration.dataset_name)
             logging.info(f"Creating table '{table_identifier}'")
-            catalog.create_table_if_not_exists(table_identifier, schema)
+            catalog.create_table_if_not_exists(table_identifier, table_configuration.schema)
     logging.info("Initialization complete!")
-
 
