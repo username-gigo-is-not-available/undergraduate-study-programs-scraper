@@ -1,7 +1,7 @@
 from pyiceberg.schema import Schema
 from pyiceberg.types import StringType, NestedField, IntegerType
 
-COURSE_2023_SCHEMA = Schema(
+COURSE_SCHEMA = Schema(
 NestedField(
         id=1,
         name="accreditation_year",
@@ -43,5 +43,11 @@ NestedField(
         field_type=StringType(),
         required=False,
         doc="A text description of the prerequisites required to enroll in this course. Can be null if no prerequisites are listed."
+    ),
+    NestedField(
+        id=7,
+        name="text",
+        field_type=StringType(),
+        doc="The content of the pdf file related to this course."
     )
 )

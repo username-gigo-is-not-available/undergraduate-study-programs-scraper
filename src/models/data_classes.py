@@ -4,7 +4,7 @@ from src.models.enums import OfferingType
 
 
 @dataclass(frozen=True)
-class StudyProgram2018:
+class StudyProgram:
     accreditation_year: int
     name: str
     duration: int
@@ -16,7 +16,7 @@ class StudyProgram2018:
 
 
 @dataclass(frozen=True)
-class Curriculum2018:
+class Curriculum:
     accreditation_year: int
     study_program_name: str
     study_program_duration: int
@@ -29,12 +29,14 @@ class Curriculum2018:
 
 
 @dataclass(frozen=True)
-class Course2018:
+class Course:
     accreditation_year: int
     code: str
     name: str
     url: str
-    text: str
+    professors: str | None = None
+    prerequisites: str | None = None
+    text: str | None = None
 
     def __str__(self):
         return f"{self.accreditation_year} {self.name}"

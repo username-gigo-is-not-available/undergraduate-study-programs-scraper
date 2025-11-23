@@ -8,12 +8,10 @@ from ssl import SSLContext
 
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
-from pyiceberg.schema import Schema
 
 from src.models.types import StudyProgram
 from src.network import HTTPClient
 from src.parsers.base_parser import BaseParser
-from src.storage import IcebergClient
 
 
 class BaseStudyProgramParser(BaseParser):
@@ -23,7 +21,6 @@ class BaseStudyProgramParser(BaseParser):
         self.ready_event: asyncio.Event = asyncio.Event()
         self.queue: queue.Queue = queue.Queue()
         self.done_event: threading.Event = threading.Event()
-
     @property
     @abstractmethod
     def li_selector(self) -> str:
@@ -70,10 +67,7 @@ class BaseStudyProgramParser(BaseParser):
     async def run(self, session: ClientSession,
                   ssl_context: SSLContext,
                   page_content: str,
-                  table_name: str,
-                  schema: Schema,
                   http_client: HTTPClient,
-                  iceberg_client: IcebergClient,
                   semaphore: asyncio.Semaphore) -> list[StudyProgram]:
 
         tasks: list[Task[tuple[int, str, str]]] = []
@@ -83,7 +77,8 @@ class BaseStudyProgramParser(BaseParser):
         for study_program_url in study_program_urls:
             tasks.append(
                 asyncio.create_task(
-                    http_client.fetch_text_limited(
+                    http_client.fetch_page_limited(
+                        strategy=http_client.text_strategy,
                         session=session,
                         ssl_context=ssl_context,
                         url=study_program_url,
@@ -100,6 +95,5 @@ class BaseStudyProgramParser(BaseParser):
                 self.set_event(self.ready_event)
 
         self.set_event(self.done_event)
-        logging.info(f"Finished processing {table_name}")
-        await iceberg_client.save_data(study_programs, table_name, schema)
+        logging.info(f"Finished processing {StudyProgram.__name__}")
         return study_programs

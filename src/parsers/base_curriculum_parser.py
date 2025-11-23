@@ -7,13 +7,11 @@ from concurrent.futures import Executor
 from functools import reduce, partial
 
 from bs4 import Tag
-from pyiceberg.schema import Schema
 
 from src.models.enums import OfferingType
 from src.models.types import Curriculum, StudyProgram
 from src.parsers.base_parser import BaseParser
 from src.parsers.base_study_program_parser import BaseStudyProgramParser
-from src.storage import IcebergClient
 
 
 class BaseCurriculumParser(BaseParser):
@@ -69,9 +67,6 @@ class BaseCurriculumParser(BaseParser):
         return [row for row in section.select(self.course_table_rows_selector) if self.is_valid_course_row(row, self.course_url_selector)]
 
     async def run(self,
-                  table_name: str,
-                  schema: Schema,
-                  iceberg_client: IcebergClient,
                   study_program_parser: BaseStudyProgramParser,
                   executor: Executor) -> list[Curriculum]:
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
@@ -95,6 +90,5 @@ class BaseCurriculumParser(BaseParser):
 
         self.set_event(self.done_event)
         curricula: list[Curriculum] = self.flatten(nested_curricula)
-        logging.info(f"Finished processing {table_name}")
-        await iceberg_client.save_data(curricula, table_name, schema)
+        logging.info(f"Finished processing {Curriculum.__name__}")
         return curricula

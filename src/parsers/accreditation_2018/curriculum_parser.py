@@ -2,7 +2,7 @@ import logging
 
 from bs4 import Tag, BeautifulSoup
 
-from src.models.accreditation_2018.data_classes import Curriculum2018, StudyProgram2018
+from src.models.data_classes import Curriculum, StudyProgram
 from src.models.enums import OfferingType
 from src.parsers.base_curriculum_parser import BaseCurriculumParser
 
@@ -30,9 +30,9 @@ class Curriculum2018Parser(BaseCurriculumParser):
         return 'td:nth-child(1)'
 
 
-    def parse_row(self, *args, **kwargs) -> Curriculum2018:
+    def parse_row(self, *args, **kwargs) -> Curriculum:
 
-        study_program: StudyProgram2018 = kwargs.get('study_program')
+        study_program: StudyProgram = kwargs.get('study_program')
         element: Tag = kwargs.get('element')
         offering_type: OfferingType = kwargs.get('offering_type')
         semester: int = kwargs.get('semester')
@@ -42,7 +42,7 @@ class Curriculum2018Parser(BaseCurriculumParser):
         self.course_urls_queue.put_nowait(course_url)
         self.set_event(self.ready_event)
 
-        curriculum: Curriculum2018 = Curriculum2018(
+        curriculum: Curriculum = Curriculum(
             accreditation_year=self.accreditation_year,
             study_program_name=study_program.name,
             study_program_duration=study_program.duration,
@@ -54,13 +54,13 @@ class Curriculum2018Parser(BaseCurriculumParser):
 
         return curriculum
 
-    def parse_data(self, *args, **kwargs) -> list[Curriculum2018]:
+    def parse_data(self, *args, **kwargs) -> list[Curriculum]:
 
-        study_program: StudyProgram2018 = kwargs.get('study_program')
+        study_program: StudyProgram = kwargs.get('study_program')
         page_content: str = kwargs.get('page_content')
         soup: BeautifulSoup = self.get_parsed_html(page_content)
 
-        curricula: list[Curriculum2018] = []
+        curricula: list[Curriculum] = []
         sections: list[Tag] = soup.select(self.course_section_selector)
 
         for semester, section in enumerate(sections, start=1):

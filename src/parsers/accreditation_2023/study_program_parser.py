@@ -2,7 +2,7 @@ import logging
 
 from bs4 import Tag, BeautifulSoup
 
-from src.models.accreditation_2023.data_classes import StudyProgram2023
+from src.models.data_classes import StudyProgram
 from src.parsers.base_parser import BaseParser
 from src.parsers.base_study_program_parser import BaseStudyProgramParser
 
@@ -33,11 +33,11 @@ class StudyProgram2023Parser(BaseStudyProgramParser):
     def title_selector(self) -> str:
         return 'div:nth-child(3) > div:nth-child(2) > h5'
 
-    def parse_row(self, *args, **kwargs) -> StudyProgram2023:
+    def parse_row(self, *args, **kwargs) -> StudyProgram:
         element: Tag = kwargs.get('element')
         url: str = kwargs.get('url')
 
-        study_program: StudyProgram2023 = StudyProgram2023(
+        study_program: StudyProgram = StudyProgram(
             accreditation_year=self.accreditation_year,
             name=self.extract_text(element, self.name_selector),
             duration=int(self.extract_text(element, self.duration_selector)),
@@ -47,7 +47,7 @@ class StudyProgram2023Parser(BaseStudyProgramParser):
         logging.info(f"Scraped study_program {study_program}")
         return study_program
 
-    def parse_data(self, *args, **kwargs) -> list[StudyProgram2023]:
+    def parse_data(self, *args, **kwargs) -> list[StudyProgram]:
         page_content: str = kwargs.get('page_content')
         url: str = kwargs.get('url')
         soup: BeautifulSoup = BaseParser.get_parsed_html(page_content)

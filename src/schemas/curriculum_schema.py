@@ -1,7 +1,7 @@
 from pyiceberg.schema import Schema
 from pyiceberg.types import StringType, IntegerType, NestedField
 
-CURRICULUM_2018_SCHEMA = Schema(
+CURRICULUM_SCHEMA = Schema(
 NestedField(
         id=1,
         name="accreditation_year",

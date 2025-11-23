@@ -6,8 +6,7 @@ import re
 import fitz
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import ApplicationConfiguration
-from src.models.accreditation_2018.data_classes import Course2018
+from src.models.data_classes import Course
 from src.parsers.base_course_parser import BaseCourseParser
 from src.parsers.base_parser import BaseParser
 
@@ -36,7 +35,7 @@ class Course2018Parser(BaseCourseParser):
         return 'span'
 
 
-    def parse_row(self, *args, **kwargs) -> Course2018 | None:
+    def parse_row(self, *args, **kwargs) -> Course | None:
         url: str = kwargs.get('url')
         stream: bytes = kwargs.get('stream')
         element: Tag = kwargs.get('element')
@@ -49,7 +48,7 @@ class Course2018Parser(BaseCourseParser):
         document: fitz.Document | None = fitz.open(stream=io.BytesIO(stream)) if stream else None
         text: str = "".join([page.get_text() for page in document]) if document else ""
 
-        course: Course2018 = Course2018(
+        course: Course = Course(
             accreditation_year=self.accreditation_year,
             code=code,
             name=self.extract_text(element, self.name_selector),
@@ -59,7 +58,7 @@ class Course2018Parser(BaseCourseParser):
         logging.info(f"Scraped course {course}")
         return course
 
-    def parse_data(self, *args, **kwargs) -> Course2018:
+    def parse_data(self, *args, **kwargs) -> Course:
         url: str = kwargs.get('url')
         stream: bytes = kwargs.get('stream', b'')
         page_content: str = kwargs.get('page_content')

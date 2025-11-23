@@ -1,6 +1,6 @@
 import asyncio
 import threading
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from functools import cache
 
 from bs4 import Tag, BeautifulSoup
@@ -8,7 +8,7 @@ from bs4 import Tag, BeautifulSoup
 from src.models.types import Record
 
 
-class BaseParser:
+class BaseParser(ABC):
     BASE_URL: str = "https://finki.ukim.mk"
 
     @property
@@ -75,6 +75,5 @@ class BaseParser:
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> list[Record] | Record:
+    def run(self, *args, **kwargs) -> list[Record]:
         raise NotImplementedError("Subclasses must implement this method.")
-

@@ -2,7 +2,7 @@ import logging
 
 from bs4 import Tag, BeautifulSoup
 
-from src.models.accreditation_2023.data_classes import Curriculum2023, StudyProgram2023
+from src.models.data_classes import Curriculum, StudyProgram
 from src.models.enums import OfferingType
 from src.parsers.base_curriculum_parser import BaseCurriculumParser
 
@@ -37,9 +37,9 @@ class Curriculum2023Parser(BaseCurriculumParser):
     def elective_course_semester_selector(self) -> str:
         return 'td:nth-child(3)'
 
-    def parse_row(self, *args, **kwargs) -> Curriculum2023:
+    def parse_row(self, *args, **kwargs) -> Curriculum:
 
-        study_program: StudyProgram2023 = kwargs.get('study_program')
+        study_program: StudyProgram = kwargs.get('study_program')
         element: Tag = kwargs.get('element')
         offering_type: OfferingType = kwargs.get('offering_type')
         course_url: str = self.extract_url(element, self.course_url_selector)
@@ -47,7 +47,7 @@ class Curriculum2023Parser(BaseCurriculumParser):
         course_name: str = self.extract_text(element, self.course_name_selector)
         self.course_urls_queue.put_nowait(course_url)
         self.set_event(self.ready_event)
-        curriculum: Curriculum2023 = Curriculum2023(
+        curriculum: Curriculum = Curriculum(
             accreditation_year=self.accreditation_year,
             study_program_name=study_program.name,
             study_program_duration=study_program.duration,
@@ -59,13 +59,13 @@ class Curriculum2023Parser(BaseCurriculumParser):
 
         return curriculum
 
-    def parse_data(self, *args, **kwargs) -> list[Curriculum2023]:
+    def parse_data(self, *args, **kwargs) -> list[Curriculum]:
 
-        study_program: StudyProgram2023 = kwargs.get('study_program')
+        study_program: StudyProgram = kwargs.get('study_program')
         page_content: str = kwargs.get('page_content')
         soup: BeautifulSoup = self.get_parsed_html(page_content)
 
-        curricula: list[Curriculum2023] = []
+        curricula: list[Curriculum] = []
         offering_type_selectors: dict[OfferingType, str] = {
             OfferingType.MANDATORY: self.mandatory_course_table_selector,
             OfferingType.ELECTIVE: self.elective_course_table_selector,

@@ -2,8 +2,7 @@ import logging
 
 from bs4 import Tag, BeautifulSoup
 
-from src.configurations import ApplicationConfiguration
-from src.models.accreditation_2018.data_classes import StudyProgram2018
+from src.models.data_classes import StudyProgram
 from src.parsers.base_parser import BaseParser
 from src.parsers.base_study_program_parser import BaseStudyProgramParser
 
@@ -39,13 +38,13 @@ class StudyProgram2018Parser(BaseStudyProgramParser):
         return 'div > div > div > p:nth-child(5)'
 
 
-    def parse_row(self, *args, **kwargs) -> StudyProgram2018:
+    def parse_row(self, *args, **kwargs) -> StudyProgram:
         element: Tag = kwargs.get('element')
         url: str = kwargs.get('url')
         duration: int = kwargs.get('duration')
         title: str = kwargs.get('title')
         self.decompose(element, self.arrow_selector)
-        study_program: StudyProgram2018 = StudyProgram2018(
+        study_program: StudyProgram = StudyProgram(
             accreditation_year=self.accreditation_year,
             name=self.extract_text(element, self.name_selector),
             duration=duration,
@@ -55,14 +54,14 @@ class StudyProgram2018Parser(BaseStudyProgramParser):
         logging.info(f"Scraped study_program {study_program}")
         return study_program
 
-    def parse_data(self, *args, **kwargs) -> list[StudyProgram2018]:
+    def parse_data(self, *args, **kwargs) -> list[StudyProgram]:
         page_content: str = kwargs.get('page_content')
         url: str = kwargs.get('url')
         soup: BeautifulSoup = BaseParser.get_parsed_html(page_content)
         element: Tag = soup.select_one(self.main_selector)
         number_of_durations: int = len(self.extract_multiple_texts(element, self.duration_selector))
         titles: list[str] = self.extract_texts_from_node(element, self.title_selector)
-        study_programs: list[StudyProgram2018] = []
+        study_programs: list[StudyProgram] = []
         for duration, title in zip(range(self.STUDY_PROGRAM_MAX_DURATION, self.STUDY_PROGRAM_MAX_DURATION - number_of_durations, -1), titles[::-1]):
             study_programs.append(self.parse_row(element=element, url=url, duration=duration, title=title))
 

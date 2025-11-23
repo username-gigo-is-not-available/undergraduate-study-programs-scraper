@@ -11,13 +11,11 @@ from ssl import SSLContext
 
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
-from pyiceberg.schema import Schema
 
 from src.models.types import Course
 from src.network import HTTPClient
 from src.parsers.base_curriculum_parser import BaseCurriculumParser
 from src.parsers.base_parser import BaseParser
-from src.storage import IcebergClient
 
 
 class BaseCourseParser(BaseParser):
@@ -61,15 +59,14 @@ class BaseCourseParser(BaseParser):
     def non_null(cls, courses: list[Course]) -> list[Course]:
         return list(filter(lambda x: x, courses))
 
-    async def run(self, session: ClientSession,
+    async def run(self,
+                  session: ClientSession,
                   ssl_context: SSLContext,
-                  table_name: str,
-                  schema: Schema,
                   http_client: HTTPClient,
-                  iceberg_client: IcebergClient,
                   curriculum_parser: BaseCurriculumParser,
                   semaphore: asyncio.Semaphore,
-                  executor: Executor) -> list[Course]:
+                  executor: Executor
+                  ) -> list[Course]:
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
         await loop.run_in_executor(executor, curriculum_parser.ready_event.wait)
         html_tasks: list[Task[tuple[int, str, str]]] = []
@@ -86,7 +83,9 @@ class BaseCourseParser(BaseParser):
 
             if course_url not in self.course_urls_set:
                 html_tasks.append(asyncio.create_task(
-                    http_client.fetch_text_limited(session=session,
+                    http_client.fetch_page_limited(
+                                                   strategy=http_client.text_strategy,
+                                                   session=session,
                                                    ssl_context=ssl_context,
                                                    url=course_url,
                                                    semaphore=semaphore,
@@ -99,7 +98,9 @@ class BaseCourseParser(BaseParser):
             soup: BeautifulSoup = BaseParser.get_parsed_html(page_content)
             pdf_url: str = self.extract_url(soup, self.file_selector, False)
             pdf_tasks.append(asyncio.create_task(
-                http_client.fetch_bytes_limited(session=session,
+                http_client.fetch_page_limited(
+                                               strategy=http_client.bytes_strategy,
+                                               session=session,
                                                ssl_context=ssl_context,
                                                url=pdf_url,
                                                semaphore=semaphore,
@@ -126,6 +127,5 @@ class BaseCourseParser(BaseParser):
             *[self.queue.get_nowait() for _ in range(self.queue.qsize())])  # type: ignore
         self.set_event(self.done_event)
         courses: list[Course] = self.non_null(courses)
-        logging.info(f"Finished processing {table_name}")
-        await iceberg_client.save_data(courses, table_name, schema)
+        logging.info(f"Finished processing {Course.__name__}")
         return courses
