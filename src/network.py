@@ -94,13 +94,6 @@ class HTTPClient:
     async def fetch_text(self, session: ClientSession, ssl_context: SSLContext, url: str) -> Tuple[int, str, str]:
         return await self.fetch_page(session, ssl_context, url, self.text_strategy)
 
-    async def fetch_text_limited(self, session: ClientSession, ssl_context: SSLContext, url: str,
-                                 semaphore: asyncio.Semaphore, **kwargs: Any) -> Tuple:
-        return await self.fetch_page_limited(self.text_strategy, session, ssl_context, url, semaphore, **kwargs)
-
     async def fetch_bytes(self, session: ClientSession, ssl_context: SSLContext, url: str) -> Tuple[int, bytes, str]:
         return await self.fetch_page(session, ssl_context, url, self.bytes_strategy)
 
-    async def fetch_bytes_limited(self, session: ClientSession, ssl_context: SSLContext, url: str,
-                                  semaphore: asyncio.Semaphore, **kwargs: Any) -> Tuple:
-        return await self.fetch_page_limited(self.bytes_strategy, session, ssl_context, url, semaphore, **kwargs)
