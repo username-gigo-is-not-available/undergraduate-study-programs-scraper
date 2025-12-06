@@ -60,7 +60,7 @@ class IcebergClient:
         logging.info(f"Saving data to {table_identifier} with schema {table_configuration.dataset_name} and {len(data)} rows")
 
         with table.transaction() as transaction:
-            transaction.append(self.to_arrow(data, table_configuration.schema))
+            transaction.overwrite(self.to_arrow(data, table_configuration.schema))
 
         logging.info(f"Created snapshot_id: {table.current_snapshot().snapshot_id} for table {table_identifier}")
         return data
