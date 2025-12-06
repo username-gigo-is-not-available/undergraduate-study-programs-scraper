@@ -13,7 +13,6 @@ NestedField(
         id=2,
         name="code",
         field_type=StringType(),
-        required=True,
         doc="The unique identifier code for the course (pattern: ^F\\d{2}L[1-3][SW]\\d{3})."
     ),
     NestedField(

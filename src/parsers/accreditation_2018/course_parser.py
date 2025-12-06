@@ -50,7 +50,6 @@ class Course2018Parser(BaseCourseParser):
 
         course: Course = Course(
             accreditation_year=self.accreditation_year,
-            code=code,
             name=self.extract_text(element, self.name_selector),
             url=url,
             text=text,

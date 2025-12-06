@@ -31,9 +31,9 @@ class Curriculum:
 @dataclass(frozen=True)
 class Course:
     accreditation_year: int
-    code: str
     name: str
     url: str
+    code: str | None = None
     professors: str | None = None
     prerequisites: str | None = None
     text: str | None = None
