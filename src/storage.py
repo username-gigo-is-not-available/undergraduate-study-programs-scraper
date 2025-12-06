@@ -45,7 +45,7 @@ class IcebergClient:
         return self._s3_client
 
     @classmethod
-    def get_table_identifier(cls,  namespace: str, table_name: str) -> str:
+    def generate_table_identifier(cls, namespace: str, table_name: str) -> str:
         return f"{namespace}.{table_name}"
 
     @classmethod
@@ -55,7 +55,7 @@ class IcebergClient:
     async def save_data(self, data: list[Record], table_configuration: TableConfiguration) -> list[dict[str, Any]]:
         catalog: Catalog = self.get_catalog()
 
-        table_identifier: str = self.get_table_identifier(StorageConfiguration.ICEBERG_NAMESPACE, table_configuration.dataset_name)
+        table_identifier: str = self.generate_table_identifier(StorageConfiguration.ICEBERG_NAMESPACE, table_configuration.dataset_name)
         table: Table = catalog.load_table(table_identifier)
         logging.info(f"Saving data to {table_identifier} with schema {table_configuration.dataset_name} and {len(data)} rows")
 

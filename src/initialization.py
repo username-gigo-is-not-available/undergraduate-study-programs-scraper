@@ -37,7 +37,7 @@ async def create_tables(table_configurations: list[TableConfiguration]) -> None:
     catalog.create_namespace_if_not_exists(namespace)
 
     for table_configuration in table_configurations:
-            table_identifier: str = iceberg_client.get_table_identifier(namespace, table_configuration.dataset_name)
+            table_identifier: str = iceberg_client.generate_table_identifier(namespace, table_configuration.dataset_name)
             logging.info(f"Creating table '{table_identifier}'")
             catalog.create_table_if_not_exists(table_identifier, table_configuration.schema)
     logging.info("Initialization complete!")
